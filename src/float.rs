@@ -15,6 +15,16 @@ impl Float {
     pub fn sqrt(&self) -> f64 {
         self.0.sqrt()
     }
+
+    pub fn clamp(&self, min: f64, max: f64) -> f64 {
+        if self.value() < min {
+            min
+        } else if self.value() > max {
+            max
+        } else {
+            self.value()
+        }
+    }
 }
 
 // Addition
