@@ -26,6 +26,7 @@ impl_op_ex!(- |a: &Color, b: &Color| -> Color { Color {red: &a.red - &b.red, gre
 
 // Multiplication
 impl_op_ex!(* |a: &Color, s: f64| -> Color { Color {red: &a.red * s, green: &a.green * s, blue: &a.blue * s} });
+impl_op_ex!(* |a: &Color, b: &Color| -> Color { Color {red: &a.red * &b.red, green: &a.green * &b.green, blue: &a.blue * &b.blue} }); // Hadarmard product
 
 
 #[cfg(test)]
@@ -45,11 +46,19 @@ mod tests {
         let a = Color::new(0.9, 0.6, 0.75);
         let b = Color::new(0.7, 0.1, 0.25);
 
+        // Addition
         assert_eq!(&a + &b, Color::new(1.6, 0.7, 1.0));
 
+        // Subtraction
         assert_eq!(&a - &b, Color::new(0.2, 0.5, 0.5));
 
+        // Scalar Multiplication
         let a = Color::new(0.2, 0.3, 0.4);
         assert_eq!(&a * 2.0, Color::new(0.4, 0.6, 0.8));
+
+        // Multiplication
+        let a  = Color::new(1.0, 0.2, 0.4);
+        let b  = Color::new(0.9, 1.0, 0.1);
+        assert_eq!(&a * &b, Color::new(0.9, 0.2, 0.04));
     }
 }
