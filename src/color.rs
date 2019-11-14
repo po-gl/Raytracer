@@ -2,10 +2,10 @@
 /// `color` is a module to represent color tuples
 
 use std::ops;
-use crate::float::Float;
+use super::float::Float;
 
 #[derive(Debug, PartialEq)]
-struct Color {
+pub struct Color {
     pub red: Float,
     pub green: Float,
     pub blue: Float,

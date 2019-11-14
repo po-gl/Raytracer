@@ -2,7 +2,7 @@
 /// `tuple` is a module to represent our most basic data structure, an ordered list
 
 use std::ops;
-use crate::float::Float;
+use super::float::Float;
 
 #[derive(Debug, PartialEq)]
 pub struct Tuple {
