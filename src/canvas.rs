@@ -23,31 +23,63 @@ impl Canvas {
     }
 
     pub fn write_pixel(&mut self, row: i32, col: i32, color: &Color) {
-        self.pixels[row as usize][col as usize] = Color::new(color.red.value(), color.green.value(), color.blue.value());
-    }
-}
-
-pub fn canvas_to_ppm(canvas: &Canvas) -> String {
-    let mut str = String::new();
-    let max_color_val = 255.0;
-
-    // Push header
-    str.push_str("P3\n");
-    str.push_str(format!("{} {}\n", canvas.width, canvas.height).as_ref());
-    str.push_str(format!("{}\n", max_color_val).as_ref());
-
-    // Push pixels
-    for i in 0..canvas.height {
-        for j in 0..canvas.width {
-            let color = canvas.pixel_at(i, j);
-            let red = (&color.red * max_color_val).clamp(0.0, max_color_val);
-            let green = (&color.green * max_color_val).clamp(0.0, max_color_val);
-            let blue = (&color.blue * max_color_val).clamp(0.0, max_color_val);
-            str.push_str(format!("{:.0} {:.0} {:.0} ", red, green, blue).as_ref());
+        // ignore writing outside of canvas
+        if row >= 0 && row < self.height && col >= 0 && col < self.width {
+            self.pixels[row as usize][col as usize] = Color::new(color.red.value(), color.green.value(), color.blue.value());
         }
-        str.push_str("\n");
     }
-    str
+
+
+    pub fn to_ppm(&self) -> String {
+        let mut str = String::new();
+        let max_color_val = 255.0;
+
+        // Push header
+        str.push_str("P3\n");
+        str.push_str(format!("{} {}\n", self.width, self.height).as_ref());
+        str.push_str(format!("{}\n", max_color_val).as_ref());
+
+        // Push pixels
+        let mut line = String::new();
+        for i in 0..self.height {
+            for j in 0..self.width {
+                let color = self.pixel_at(i, j);
+                let red = (&color.red * max_color_val).clamp(0.0, max_color_val);
+                let green = (&color.green * max_color_val).clamp(0.0, max_color_val);
+                let blue = (&color.blue * max_color_val).clamp(0.0, max_color_val);
+
+                // Ensure that no line is greater than 70 characters
+                // Although I think Preview does not have an issue regardless
+
+                // Red
+                if line.len() + red.to_string().len() + 1 > 70 {
+                    line.push('\n');
+                    str.push_str(&line);
+                    line.clear();
+                }
+                line.push_str(format!("{:.0} ", red).as_ref());
+
+                // Green
+                if line.len() + green.to_string().len() + 1 > 70 {
+                    line.push('\n');
+                    str.push_str(&line);
+                    line.clear();
+                }
+                line.push_str(format!("{:.0} ", green).as_ref());
+
+                // Blue
+                if line.len() + blue.to_string().len() + 1 > 70 {
+                    line.push('\n');
+                    str.push_str(&line);
+                    line.clear();
+                }
+                line.push_str(format!("{:.0} ", blue).as_ref());
+            }
+        }
+        line.push('\n');
+        str.push_str(&line);
+        str
+    }
 }
 
 
@@ -84,16 +116,14 @@ mod tests {
         c.write_pixel(0, 0, &Color::new(1.5, 0.0, 0.0));
         c.write_pixel(1, 2, &Color::new(0.0, 0.5, 0.0));
         c.write_pixel(2, 4, &Color::new(-0.5, 0.0, 1.0));
-        let actual = canvas_to_ppm(&c);
+        let actual = c.to_ppm();
         let expected =
         "\
         P3\n\
         5 3\n\
         255\n\
-        255 0 0 0 0 0 0 0 0 0 0 0 0 0 0 \n\
-        0 0 0 0 0 0 0 128 0 0 0 0 0 0 0 \n\
-        0 0 0 0 0 0 0 0 0 0 0 0 0 0 255 \n\
-        ";
+        255 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 128 0 0 0 0 0 0 0 0 0 0 \n\
+        0 0 0 0 0 0 0 0 0 0 0 255 \n";
         assert_eq!(actual, expected);
     }
 }
