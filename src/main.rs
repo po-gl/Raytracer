@@ -9,6 +9,7 @@ const FLOAT_THRESHOLD: f64 = 0.00001;
 
 pub mod float;
 pub mod tuple;
+pub mod matrix;
 pub mod color;
 pub mod canvas;
 pub mod file;
