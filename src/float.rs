@@ -4,7 +4,7 @@
 use std::ops;
 use crate::FLOAT_THRESHOLD;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Float(pub f64);
 
 impl Float {
