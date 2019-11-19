@@ -5,6 +5,7 @@
 use std::ops;
 use std::ops::Index;
 use super::float::Float;
+use super::tuple::Tuple;
 
 #[derive(Debug, PartialEq)]
 struct Matrix4([[Float; 4]; 4]);
@@ -20,30 +21,59 @@ struct Matrix2([[Float; 2]; 2]);
 impl Matrix4 {
     pub fn new(mat: [[f64; 4]; 4]) -> Matrix4 {
         let mut new_mat= [[Float(0.0); 4]; 4];
-        for i in 0..mat.len() {
-            for j in 0..mat[0].len() {
+        for i in 0..4 {
+            for j in 0..4 {
                 new_mat[i][j] = Float(mat[i][j]);
             }
         }
         Matrix4(new_mat)
     }
-}
 
-impl Index<i32> for Matrix4 {
-    type Output = [Float; 4];
-
-    fn index(&self, index: i32) -> &Self::Output {
-        &self.0[index as usize]
+    pub fn identity() -> Matrix4 {
+        let mut new_mat= [[Float(0.0); 4]; 4];
+        for i in 0..4 {
+            new_mat[i][i] = Float(1.0);
+        }
+        Matrix4(new_mat)
     }
 }
+
+impl Index<usize> for Matrix4 {
+    type Output = [Float; 4];
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
+    }
+}
+
+// Matrix Multiplication
+impl_op_ex!(* |a: &Matrix4, b: &Matrix4| -> Matrix4 {
+    let mut prod_mat = [[Float(0.0); 4]; 4];
+    for r in 0..4 {
+        for c in 0..4 {
+            prod_mat[r][c] = a[r][0] * b[0][c] + a[r][1] * b[1][c] + a[r][2] * b[2][c] + a[r][3] * b[3][c];
+        }
+    }
+    Matrix4(prod_mat)
+});
+
+// Tuple Multiplication
+impl_op_ex!(* |a: &Matrix4, b: &Tuple| -> Tuple {
+    Tuple {
+        x: a[0][0] * b.x + a[0][1] * b.y + a[0][2] * b.z + a[0][3] * b.w,
+        y: a[1][0] * b.x + a[1][1] * b.y + a[1][2] * b.z + a[1][3] * b.w,
+        z: a[2][0] * b.x + a[2][1] * b.y + a[2][2] * b.z + a[2][3] * b.w,
+        w: a[3][0] * b.x + a[3][1] * b.y + a[3][2] * b.z + a[3][3] * b.w,
+    }
+});
 
 // -------------------- 3x3 Matrix--------------------
 
 impl Matrix3 {
     pub fn new(mat: [[f64; 3]; 3]) -> Matrix3 {
         let mut new_mat= [[Float(0.0); 3]; 3];
-        for i in 0..mat.len() {
-            for j in 0..mat[0].len() {
+        for i in 0..3 {
+            for j in 0..3 {
                 new_mat[i][j] = Float(mat[i][j]);
             }
         }
@@ -64,8 +94,8 @@ impl Index<i32> for Matrix3 {
 impl Matrix2 {
     pub fn new(mat: [[f64; 2]; 2]) -> Matrix2 {
         let mut new_mat= [[Float(0.0); 2]; 2];
-        for i in 0..mat.len() {
-            for j in 0..mat[0].len() {
+        for i in 0..2 {
+            for j in 0..2 {
                 new_mat[i][j] = Float(mat[i][j]);
             }
         }
@@ -85,6 +115,7 @@ impl Index<i32> for Matrix2 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tuple::Tuple;
 
     #[test]
     fn matrix_creation() {
@@ -141,6 +172,7 @@ mod tests {
         assert_ne!(a, c);
     }
 
+    #[test]
     fn matrix_operations() {
         // Multiplication
         let a = Matrix4::new(
@@ -162,5 +194,27 @@ mod tests {
             [16.0, 26.0, 46.0, 42.0]]);
 
         assert_eq!(a * b, c);
+
+
+        // Tuple Multiplication
+        let a = Matrix4::new(
+           [[1.0, 2.0, 3.0, 4.0],
+            [2.0, 4.0, 4.0, 2.0],
+            [8.0, 6.0, 4.0, 1.0],
+            [0.0, 0.0, 0.0, 1.0]]);
+
+        let b = Tuple::new(1.0, 2.0, 3.0, 1.0);
+        assert_eq!(a * b, Tuple::new(18.0, 24.0, 33.0, 1.0));
+    }
+
+    #[test]
+    fn matrix_special_matrices() {
+        let a = Matrix4::new(
+           [[0.0, 1.0, 2.0, 4.0],
+            [1.0, 2.0, 4.0, 8.0],
+            [2.0, 4.0, 8.0, 16.0],
+            [4.0, 8.0, 16.0, 32.0]]);
+
+        assert_eq!(&a * Matrix4::identity(), a);
     }
 }
