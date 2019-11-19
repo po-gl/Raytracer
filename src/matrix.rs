@@ -1,20 +1,20 @@
 /// # matrix
-/// `matrix` is a module to represent a 4x4 matrix
+/// `matrix` is a module to represent a 2x2, 3x3, and 4x4 matrices
 
 
 use std::ops;
-use std::ops::Index;
+use std::ops::{Index, IndexMut};
 use super::float::Float;
 use super::tuple::Tuple;
 
 #[derive(Debug, PartialEq)]
-struct Matrix4([[Float; 4]; 4]);
+pub struct Matrix4([[Float; 4]; 4]);
 
 #[derive(Debug, PartialEq)]
-struct Matrix3([[Float; 3]; 3]);
+pub struct Matrix3([[Float; 3]; 3]);
 
 #[derive(Debug, PartialEq)]
-struct Matrix2([[Float; 2]; 2]);
+pub struct Matrix2([[Float; 2]; 2]);
 
 // -------------------- 4x4 Matrix--------------------
 
@@ -126,6 +126,12 @@ impl Index<usize> for Matrix4 {
     }
 }
 
+impl IndexMut<usize> for Matrix4 {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.0[index]
+    }
+}
+
 // Matrix Multiplication
 impl_op_ex!(* |a: &Matrix4, b: &Matrix4| -> Matrix4 {
     let mut prod_mat = [[Float(0.0); 4]; 4];
@@ -212,6 +218,12 @@ impl Index<usize> for Matrix3 {
     }
 }
 
+impl IndexMut<usize> for Matrix3 {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.0[index]
+    }
+}
+
 // -------------------- 2x2 Matrix--------------------
 
 impl Matrix2 {
@@ -236,6 +248,12 @@ impl Index<usize> for Matrix2 {
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index as usize]
+    }
+}
+
+impl IndexMut<usize> for Matrix2 {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.0[index]
     }
 }
 
