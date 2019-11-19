@@ -68,6 +68,28 @@ impl Matrix4 {
         Matrix3(new_mut)
     }
 
+    /// Returns the determinant of the sub matrix that is
+    /// not including the row and column provided
+    pub fn minor(&self, row: usize, col: usize) -> Float {
+        self.submatrix(row, col).determinant()
+    }
+
+    /// Returns the minor of a matrix that is negated depending on
+    /// what row and column is removed
+    pub fn cofactor(&self, row: usize, col: usize) -> Float {
+        if (row + col + 1) % 2 == 0 { // If row + col is odd, negate
+            self.minor(row, col) * -1.0
+        } else {
+            self.minor(row, col) * 1.0
+        }
+    }
+
+    pub fn determinant(&self) -> Float {
+        self[0][0] * self.cofactor(0, 0) +
+        self[0][1] * self.cofactor(0, 1) +
+        self[0][2] * self.cofactor(0, 2) +
+        self[0][3] * self.cofactor(0, 3)
+    }
 }
 
 impl Index<usize> for Matrix4 {
@@ -147,6 +169,12 @@ impl Matrix3 {
         } else {
             self.minor(row, col) * 1.0
         }
+    }
+
+    pub fn determinant(&self) -> Float {
+        self[0][0] * self.cofactor(0, 0) +
+        self[0][1] * self.cofactor(0, 1) +
+        self[0][2] * self.cofactor(0, 2)
     }
 }
 
@@ -326,6 +354,29 @@ mod tests {
         assert_eq!(a.cofactor(0, 0), -12.0);
         assert_eq!(a.minor(1, 0), 25.0);
         assert_eq!(a.cofactor(1, 0), -25.0);
+
+        // 3x3 determinant
+        let a = Matrix3::new(
+            [[1.0, 2.0, 6.0],
+             [-5.0, 8.0, -4.0],
+             [2.0, 6.0, 4.0]]);
+        assert_eq!(a.cofactor(0, 0), 56.0);
+        assert_eq!(a.cofactor(0, 1), 12.0);
+        assert_eq!(a.cofactor(0, 2), -46.0);
+        assert_eq!(a.determinant(), -196.0);
+
+        // 4x4 determinant (the big one)
+        let a = Matrix4::new(
+            [[-2.0, -8.0, 3.0, 5.0],
+             [-3.0, 1.0, 7.0, 3.0],
+             [1.0, 2.0, -9.0, 6.0],
+             [-6.0, 7.0, 7.0, -9.0]]);
+        assert_eq!(a.cofactor(0, 0), 690.0);
+        assert_eq!(a.cofactor(0, 1), 447.0);
+        assert_eq!(a.cofactor(0, 2), 210.0);
+        assert_eq!(a.cofactor(0, 3), 51.0);
+        assert_eq!(a.determinant(), -4071.0);
+
     }
 
     #[test]
