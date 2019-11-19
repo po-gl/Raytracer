@@ -132,6 +132,22 @@ impl Matrix3 {
         }
         Matrix2(new_mut)
     }
+
+    /// Returns the determinant of the sub matrix that is
+    /// not including the row and column provided
+    pub fn minor(&self, row: usize, col: usize) -> Float {
+        self.submatrix(row, col).determinant()
+    }
+
+    /// Returns the minor of a matrix that is negated depending on
+    /// what row and column is removed
+    pub fn cofactor(&self, row: usize, col: usize) -> Float {
+        if (row + col + 1) % 2 == 0 { // If row + col is odd, negate
+            self.minor(row, col) * -1.0
+        } else {
+            self.minor(row, col) * 1.0
+        }
+    }
 }
 
 impl Index<usize> for Matrix3 {
@@ -292,6 +308,24 @@ mod tests {
             [[1.0, 5.0],
                 [-3.0, 2.0]]);
         assert_eq!(a.determinant(), 17.0);
+
+        // Minor
+        let a = Matrix3::new(
+            [[3.0, 5.0, 0.0],
+             [2.0, -1.0, -7.0],
+             [6.0, -1.0, 5.0]]);
+        let b = a.submatrix(1, 0);
+        assert_eq!(a.minor(1, 0), b.determinant());
+
+        // Co-factor
+        let a = Matrix3::new(
+            [[3.0, 5.0, 0.0],
+             [2.0, -1.0, -7.0],
+             [6.0, -1.0, 5.0]]);
+        assert_eq!(a.minor(0, 0), -12.0);
+        assert_eq!(a.cofactor(0, 0), -12.0);
+        assert_eq!(a.minor(1, 0), 25.0);
+        assert_eq!(a.cofactor(1, 0), -25.0);
     }
 
     #[test]
