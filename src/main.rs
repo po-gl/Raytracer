@@ -4,14 +4,16 @@
 
 const FLOAT_THRESHOLD: f64 = 0.00001;
 
-// Macro used for easier operation overloading (versions for references)
 #[macro_use] extern crate impl_ops;
+#[macro_use] extern crate lazy_static;
 
 pub mod float;
 pub mod tuple;
 pub mod matrix;
 pub mod transformation;
+pub mod ray;
 pub mod color;
+pub mod shape;
 pub mod canvas;
 pub mod file;
 
@@ -19,6 +21,7 @@ use tuple::Tuple;
 use canvas::Canvas;
 use crate::color::Color;
 use std::f64::consts::PI;
+use crate::float::Float;
 
 
 fn main() {
@@ -40,7 +43,7 @@ fn draw_clock() {
     let mut mark = tuple::point(0.0, 0.0, 1.0 * radius); // Initial point at 12 o'clock
 
     for _ in 0..12 {
-        println!("mark: {:?}", mark);
+//        println!("mark: {:?}", mark);
         // Rotate
         mark = &rotate_30_degrees * &mark;
 
