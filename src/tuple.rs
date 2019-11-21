@@ -4,7 +4,7 @@
 use std::ops;
 use super::float::Float;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Tuple {
     pub x: Float,
     pub y: Float,
