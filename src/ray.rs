@@ -1,7 +1,6 @@
 /// # ray
 /// `ray` is a module to represent a ray tracer's ray
 
-use super::tuple;
 use super::tuple::Tuple;
 
 pub struct Ray {
@@ -26,6 +25,7 @@ impl Ray {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tuple;
 
     #[test]
     fn ray_creation() {
@@ -43,10 +43,5 @@ mod tests {
         assert_eq!(r.position(1.0), tuple::point(3.0, 3.0, 4.0));
         assert_eq!(r.position(-1.0), tuple::point(1.0, 3.0, 4.0));
         assert_eq!(r.position(2.5), tuple::point(4.5, 3.0, 4.0));
-    }
-
-    #[test]
-    fn ray_sphere_intersection() {
-        let r = Ray::new(tuple::point(0.0, 0.0, -5.0), tuple::vector(0.0, 0.0, 1.0));
     }
 }
