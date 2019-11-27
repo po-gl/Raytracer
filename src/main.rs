@@ -2,7 +2,7 @@
 //! `main` drives the program
 
 const FLOAT_THRESHOLD: f64 = 0.00001;
-const TEST_ARG: &str = "Clock";
+const TEST_ARG: &str = "--draw-circle";
 
 #[macro_use] extern crate impl_ops;
 #[macro_use] extern crate lazy_static;
@@ -22,17 +22,63 @@ use tuple::Tuple;
 use canvas::Canvas;
 use crate::color::Color;
 use std::f64::consts::PI;
+use crate::ray::Ray;
+use crate::shape::sphere::Sphere;
+use crate::shape::Shape;
+use crate::intersection::hit;
 
 
 fn main() {
     match TEST_ARG {
-        "--draw-clock" => draw_clock(),
         "--draw-arch" => draw_arch(),
+        "--draw-clock" => draw_clock(),
+        "--draw-circle" => draw_circle(),
         _ => println!("No valid argument.")
     }
 }
 
-// Below is miscellaneous functions for testing
+// Below is miscellaneous functions for testing and drawing
+
+fn draw_circle() {
+    let color = Color::new(1.0, 0.6, 0.1);
+    let mut shape = Sphere::new();
+//    shape.set_transform(transformation::scaling(0.5, 1.0, 1.0));
+    let canvas_pixels = 500;
+
+    let wall_z = 10.0;
+    let wall_size = 7.0;
+
+    let pixel_size = wall_size / canvas_pixels as f64;
+    let half = wall_size / 2.0;
+
+    let ray_origin = tuple::point(0.0, 0.0, -5.0);
+    let canvas = &mut Canvas::new(canvas_pixels, canvas_pixels);
+
+    // Each row of pixels
+    for y in 0..canvas_pixels {
+        // World y coordinate top = +half and bottom = -half
+        let world_y = half - pixel_size * y as f64;
+
+        // Each col of pixels
+        for x in 0..canvas_pixels {
+            // World x coordinate left = -half and right = +half
+            let world_x = -half + pixel_size * x as f64;
+
+            // the point on the wall that the ray will target
+            let position = tuple::point(world_x, world_y, wall_z);
+
+            let ray = Ray::new(ray_origin, (position - ray_origin).normalize());
+            let xs = shape.intersects(ray);
+
+            if hit(xs) != None {
+                canvas.write_pixel(x, y, &color);
+            }
+        }
+    }
+    file::write_to_file(canvas.to_ppm(), String::from("circle.ppm"))
+}
+
+//--------------------------------------------------
 
 fn draw_clock() {
     let canvas = &mut Canvas::new(100, 100);
@@ -58,6 +104,8 @@ fn draw_clock() {
 
     file::write_to_file(canvas.to_ppm(), String::from("clock.ppm"));
 }
+
+//--------------------------------------------------
 
 fn draw_arch() {
     let initial_projectile = Projectile {position: tuple::point(0.0, 1.0, 0.0), velocity: tuple::vector(1.0, 1.8, 0.0).normalize() * 11.25};
