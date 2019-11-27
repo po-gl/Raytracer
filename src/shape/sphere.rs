@@ -31,7 +31,7 @@ impl Sphere {
     }
 }
 
-impl Shape<Sphere> for Sphere {
+impl Shape for Sphere {
     fn intersects(&self, ray: &Ray) -> Vec<Intersection<Sphere>> {
         // Transform the ray
         let t_ray = ray.transform(&self.transform.inverse());

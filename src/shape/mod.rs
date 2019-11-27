@@ -21,8 +21,8 @@ pub fn get_shape_id() -> i32{
 }
 
 
-pub trait Shape<T: Copy> {
-    fn intersects(&self, ray: &Ray) -> Vec<Intersection<T>>;
+pub trait Shape {
+    fn intersects(&self, ray: &Ray) -> Vec<Intersection<Self>> where Self: Copy;
 
     fn set_transform(&mut self, transform: Matrix4);
 
