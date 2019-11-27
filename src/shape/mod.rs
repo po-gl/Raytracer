@@ -22,9 +22,9 @@ pub fn get_shape_id() -> i32{
 
 
 pub trait Shape<T: Copy> {
-    fn intersects(&self, ray: Ray) -> Vec<Intersection<T>>;
+    fn intersects(&self, ray: &Ray) -> Vec<Intersection<T>>;
 
     fn set_transform(&mut self, transform: Matrix4);
 
-    fn normal_at(&self, point: Tuple) -> Tuple;
+    fn normal_at(&self, point: &Tuple) -> Tuple;
 }
