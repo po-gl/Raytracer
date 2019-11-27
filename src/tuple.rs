@@ -33,6 +33,10 @@ impl Tuple {
         let magnitude = self.magnitude();
         Tuple::new(&self.x.value() / magnitude, &self.y.value() / magnitude, &self.z.value() / magnitude, &self.w.value() / magnitude)
     }
+
+    pub fn reflect(&self, normal: &Tuple) -> Tuple {
+        self - normal * 2.0 * dot(self, normal)
+    }
 }
 
 pub fn point(x: f64, y: f64, z: f64) -> Tuple {
@@ -70,18 +74,6 @@ impl_op_ex!(/ |a: &Tuple, s: f64| -> Tuple { Tuple {x: &a.x / s, y: &a.y / s, z:
 
 // Negation (unary operator)
 impl_op_ex!(- |a: &Tuple| -> Tuple { Tuple {x: 0.0 - &a.x, y: 0.0 - &a.y, z: 0.0 - &a.z, w: 0.0 - &a.w} });
-
-
-//// '==' comparator
-//impl PartialEq for Tuple {
-//    fn eq(&self, other: &Self) -> bool {
-//        // This shaves off a few ms compared to using .abs()
-//        (((self.x - other.x) < FLOAT_THRESHOLD && (self.x - other.x) >= 0.0) || ((other.x - self.x) < FLOAT_THRESHOLD && (other.x - self.x) >= 0.0))
-//        && (((self.y - other.y) < FLOAT_THRESHOLD && (self.y - other.y) >= 0.0) || ((other.y - self.y) < FLOAT_THRESHOLD && (other.y - self.y) >= 0.0))
-//        && (((self.z - other.z) < FLOAT_THRESHOLD && (self.z - other.z) >= 0.0) || ((other.z - self.z) < FLOAT_THRESHOLD && (other.z - self.z) >= 0.0))
-//        && (((self.w - other.w) < FLOAT_THRESHOLD && (self.w - other.w) >= 0.0) || ((other.w - self.w) < FLOAT_THRESHOLD && (other.w - self.w) >= 0.0))
-//    }
-//}
 
 
 #[cfg(test)]
@@ -161,6 +153,9 @@ mod tests {
         let b = vector(5.0, 6.0, 7.0);
         assert_eq!(a - b, vector(-2.0, -4.0, -6.0));
 
+        let a = vector(3.0, 2.0, 1.0);
+        assert_eq!(-a, vector(-3.0, -2.0, -1.0));
+
         // Negation
         let a = Tuple::new(1.0, -2.0, 3.0, -4.0);
         assert_eq!(-a, Tuple::new(-1.0, 2.0, -3.0, 4.0));
@@ -203,6 +198,21 @@ mod tests {
         let b = vector(2.0, 3.0, 4.0);
         assert_eq!(cross(&a, &b), vector(-1.0, 2.0, -1.0));
         assert_eq!(cross(&b, &a), vector(1.0, -2.0, 1.0));
+    }
+
+    #[test]
+    fn tuple_reflect() {
+        // Reflecting a vector approaching at a 45 deg angle
+        let v = vector(1.0, -1.0, 0.0);
+        let n = vector(0.0, 1.0, 0.0);
+        let r = v.reflect(&n);
+        assert_eq!(r, vector(1.0, 1.0, 0.0));
+
+        // Reflecting a vector off a slanted surface
+        let v = vector(0.0, -1.0, 0.0);
+        let n = vector(2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0, 0.0);
+        let r = v.reflect(&n);
+        assert_eq!(r, vector(1.0, 0.0, 0.0));
     }
 
     #[test]
