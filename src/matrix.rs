@@ -7,13 +7,13 @@ use std::ops::{Index, IndexMut};
 use super::float::Float;
 use super::tuple::Tuple;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Matrix4([[Float; 4]; 4]);
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Matrix3([[Float; 3]; 3]);
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Matrix2([[Float; 2]; 2]);
 
 // -------------------- 4x4 Matrix--------------------
