@@ -41,7 +41,7 @@ fn main() {
 
 fn draw_circle() {
     let color = Color::new(1.0, 0.6, 0.1);
-    let mut shape = Sphere::new();
+    let shape = Sphere::new();
 //    shape.set_transform(transformation::scaling(0.5, 1.0, 1.0));
     let canvas_pixels = 500;
 
