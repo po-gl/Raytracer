@@ -3,6 +3,8 @@
 
 use std::ops;
 use crate::FLOAT_THRESHOLD;
+use std::cmp::Ordering;
+use std::f64::MAX;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Float(pub f64);
@@ -24,6 +26,10 @@ impl Float {
         } else {
             self.value()
         }
+    }
+
+    pub fn max() -> Float {
+        Float(MAX)
     }
 }
 
@@ -68,6 +74,11 @@ impl PartialEq<Float> for f64 {
     }
 }
 
+impl PartialOrd<Float> for Float {
+    fn partial_cmp(&self, other: &Float) -> Option<Ordering> {
+        self.0.partial_cmp(&other.0)
+    }
+}
 
 #[cfg(test)]
 mod tests {
