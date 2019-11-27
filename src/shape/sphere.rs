@@ -7,6 +7,7 @@ use crate::shape;
 use crate::tuple;
 use crate::intersection::Intersection;
 use crate::matrix::Matrix4;
+use crate::tuple::Tuple;
 
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -47,6 +48,10 @@ impl Shape<Sphere> for Sphere {
 
     fn set_transform(&mut self, transform: Matrix4) {
         self.transform = transform;
+    }
+
+    fn normal_at(&self, point: Tuple) -> Tuple {
+        (point - tuple::point(0.0, 0.0, 0.0)).normalize()
     }
 }
 
@@ -129,5 +134,29 @@ mod tests {
         s.set_transform(transformation::translation(5.0, 0.0, 0.0));
         let xs = s.intersects(r);
         assert_eq!(xs.len(), 0);
+    }
+
+    #[test]
+    fn sphere_normals() {
+        let s = Sphere::new();
+        let n = s.normal_at(tuple::point(1.0, 0.0, 0.0));
+        assert_eq!(n, tuple::vector(1.0, 0.0, 0.0));
+
+        let s = Sphere::new();
+        let n = s.normal_at(tuple::point(0.0, 1.0, 0.0));
+        assert_eq!(n, tuple::vector(0.0, 1.0, 0.0));
+
+        let s = Sphere::new();
+        let n = s.normal_at(tuple::point(0.0, 0.0, 1.0));
+        assert_eq!(n, tuple::vector(0.0, 0.0, 1.0));
+
+        let s = Sphere::new();
+        let n = s.normal_at(tuple::point(3.0f64.sqrt()/3.0, 3.0f64.sqrt()/3.0, 3.0f64.sqrt()/3.0));
+        assert_eq!(n, tuple::vector(3.0f64.sqrt()/3.0, 3.0f64.sqrt()/3.0, 3.0f64.sqrt()/3.0));
+
+        // Verify normals are normalized
+        let s = Sphere::new();
+        let n = s.normal_at(tuple::point(3.0f64.sqrt()/3.0, 3.0f64.sqrt()/3.0, 3.0f64.sqrt()/3.0));
+        assert_eq!(n, n.normalize());
     }
 }
