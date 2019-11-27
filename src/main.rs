@@ -50,7 +50,7 @@ fn draw_shaded_circle() {
     let canvas_pixels = 500;
 
     let mut material = Material::new();
-    material.color = Color::new(0.62, 0.75, 0.73);
+    material.color = Color::from_hex("28AFB0");
     let shape = Sphere::new_with_material(material);
 
     let light = Light::point_light(&point(-10.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0));

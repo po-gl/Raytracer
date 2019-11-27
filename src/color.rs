@@ -15,6 +15,14 @@ impl Color {
     pub fn new(r: f64, g: f64, b: f64) -> Color {
         Color {red: Float(r), green: Float(g), blue: Float(b)}
     }
+
+    pub fn from_hex(hex: &str) -> Color {
+        assert_eq!(hex.len(), 6);
+        let r = i64::from_str_radix(&hex[0..2], 16).unwrap() as f64 / 255.0;
+        let g = i64::from_str_radix(&hex[2..4], 16).unwrap() as f64 / 255.0;
+        let b = i64::from_str_radix(&hex[4..6], 16).unwrap() as f64 / 255.0;
+        Color {red: Float(r), green: Float(g), blue: Float(b)}
+    }
 }
 
 
@@ -39,6 +47,12 @@ mod tests {
         assert_eq!(c.red, -0.5);
         assert_eq!(c.green, 0.4);
         assert_eq!(c.blue, 1.7);
+
+        // From Hex (Light Sea green)
+        let c = Color::from_hex("28AfB0");
+        assert_eq!(c.red, 0.156862);
+        assert_eq!(c.green, 0.686274);
+        assert_eq!(c.blue, 0.690196);
     }
 
     #[test]
