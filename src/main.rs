@@ -2,7 +2,7 @@
 //! `main` drives the program
 
 const FLOAT_THRESHOLD: f64 = 0.00001;
-const TEST_ARG: &str = "--draw-circle";
+const TEST_ARG: &str = "--draw-shaded-circle";
 
 #[macro_use] extern crate impl_ops;
 #[macro_use] extern crate lazy_static;
@@ -14,7 +14,9 @@ pub mod transformation;
 pub mod ray;
 pub mod intersection;
 pub mod color;
+pub mod material;
 pub mod shape;
+pub mod light;
 pub mod canvas;
 pub mod file;
 
@@ -27,6 +29,8 @@ use crate::shape::sphere::Sphere;
 use crate::shape::Shape;
 use crate::intersection::hit;
 use crate::tuple::{point, vector};
+use crate::material::Material;
+use crate::light::Light;
 
 
 fn main() {
@@ -34,11 +38,62 @@ fn main() {
         "--draw-arch" => draw_arch(),
         "--draw-clock" => draw_clock(),
         "--draw-circle" => draw_circle(),
+        "--draw-shaded-circle" => draw_shaded_circle(),
         _ => println!("No valid argument.")
     }
 }
 
 // Below is miscellaneous functions for testing and drawing
+
+
+fn draw_shaded_circle() {
+    let canvas_pixels = 500;
+
+    let mut material = Material::new();
+    material.color = Color::new(0.62, 0.75, 0.73);
+    let shape = Sphere::new_with_material(material);
+
+    let light = Light::point_light(&point(-10.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0));
+
+    let wall_z = 10.0;
+    let wall_size = 7.0;
+
+    let pixel_size = wall_size / canvas_pixels as f64;
+    let half = wall_size / 2.0;
+
+    let ray_origin = point(0.0, 0.0, -5.0);
+    let canvas = &mut Canvas::new(canvas_pixels, canvas_pixels);
+
+    // Each row of pixels
+    for y in 0..canvas_pixels {
+        // World y coordinate top = +half and bottom = -half
+        let world_y = half - pixel_size * y as f64;
+
+        // Each col of pixels
+        for x in 0..canvas_pixels {
+            // World x coordinate left = -half and right = +half
+            let world_x = -half + pixel_size * x as f64;
+
+            // the point on the wall that the ray will target
+            let position = point(world_x, world_y, wall_z);
+
+            let ray = Ray::new(ray_origin, (position - ray_origin).normalize());
+            let xs = shape.intersects(&ray);
+            let hit = hit(xs);
+            if hit != None {
+                let point = &ray.position(hit.unwrap().t.value());
+                let normal = &hit.unwrap().object.normal_at(point);
+                let eye = -&ray.direction;
+
+                let color = light::lighting(&hit.unwrap().object.material, &light, point, &eye, normal);
+                canvas.write_pixel(x, y, &color);
+            }
+        }
+    }
+    file::write_to_file(canvas.to_ppm(), String::from("shaded_circle.ppm"))
+}
+
+//--------------------------------------------------
 
 fn draw_circle() {
     let color = Color::new(1.0, 0.6, 0.1);
@@ -69,7 +124,7 @@ fn draw_circle() {
             let position = point(world_x, world_y, wall_z);
 
             let ray = Ray::new(ray_origin, (position - ray_origin).normalize());
-            let xs = shape.intersects(ray);
+            let xs = shape.intersects(&ray);
 
             if hit(xs) != None {
                 canvas.write_pixel(x, y, &color);
