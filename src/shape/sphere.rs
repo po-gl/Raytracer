@@ -2,35 +2,35 @@
 /// `sphere` is a module to represent a sphere shape
 
 use crate::shape::Shape;
-use crate::float::Float;
 use crate::ray::Ray;
-use crate::tuple::Tuple;
 use crate::shape;
 use crate::tuple;
 use crate::intersection::Intersection;
+use crate::matrix::Matrix4;
 
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Sphere {
     pub id: i32,
-    pub center: Tuple,
-    pub radius: Float,
+    pub transform: Matrix4,
 }
 
 impl Sphere {
-    pub fn new(center: Tuple, radius: f64) -> Sphere {
+    pub fn new() -> Sphere {
         let id = shape::get_shape_id();
-        Sphere {id, center, radius: Float(radius)}
+        Sphere {id, transform: Matrix4::identity()}
     }
 }
 
 impl Shape<Sphere> for Sphere {
     fn intersects(&self, ray: Ray) -> Vec<Intersection<Sphere>> {
+        // Transform the ray
+        let t_ray = ray.transform(&self.transform.inverse());
         // vector from the sphere's center to the ray origin
-        let sphere_to_ray = ray.origin - tuple::point(0.0, 0.0, 0.0);
+        let sphere_to_ray =t_ray.origin - tuple::point(0.0, 0.0, 0.0);
 
-        let a = tuple::dot(&ray.direction, &ray.direction);
-        let b = 2.0 * tuple::dot(&ray.direction, &sphere_to_ray);
+        let a = tuple::dot(&t_ray.direction, &t_ray.direction);
+        let b = 2.0 * tuple::dot(&t_ray.direction, &sphere_to_ray);
         let c = tuple::dot(&sphere_to_ray, &sphere_to_ray) - 1.0;
 
         let discriminant = b * b - 4.0 * a * c;
@@ -44,17 +44,22 @@ impl Shape<Sphere> for Sphere {
                         Intersection::new(t2, *self)];
         }
     }
+
+    fn set_transform(&mut self, transform: Matrix4) {
+        self.transform = transform;
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::transformation;
 
     #[test]
     fn sphere_intersection() {
         // Straight through
         let r = Ray::new(tuple::point(0.0, 0.0, -5.0), tuple::vector(0.0, 0.0, 1.0));
-        let s = Sphere::new(tuple::point(0.0, 0.0, 0.0), 1.0);
+        let s = Sphere::new();
         let xs = s.intersects(r);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 4.0);
@@ -62,7 +67,7 @@ mod tests {
 
         // Just the top (tangent)
         let r = Ray::new(tuple::point(0.0, 1.0, -5.0), tuple::vector(0.0, 0.0, 1.0));
-        let s = Sphere::new(tuple::point(0.0, 0.0, 0.0), 1.0);
+        let s = Sphere::new();
         let xs = s.intersects(r);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 5.0);
@@ -70,13 +75,13 @@ mod tests {
 
         // Missing the sphere
         let r = Ray::new(tuple::point(0.0, 2.0, -5.0), tuple::vector(0.0, 0.0, 1.0));
-        let s = Sphere::new(tuple::point(0.0, 0.0, 0.0), 1.0);
+        let s = Sphere::new();
         let xs = s.intersects(r);
         assert_eq!(xs.len(), 0);
 
         // Starting inside the sphere
         let r = Ray::new(tuple::point(0.0, 0.0, 0.0), tuple::vector(0.0, 0.0, 1.0));
-        let s = Sphere::new(tuple::point(0.0, 0.0, 0.0), 1.0);
+        let s = Sphere::new();
         let xs = s.intersects(r);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, -1.0);
@@ -84,7 +89,7 @@ mod tests {
 
         // Starting after the sphere (should have negative t value)
         let r = Ray::new(tuple::point(0.0, 0.0, 5.0), tuple::vector(0.0, 0.0, 1.0));
-        let s = Sphere::new(tuple::point(0.0, 0.0, 0.0), 1.0);
+        let s = Sphere::new();
         let xs = s.intersects(r);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, -6.0);
@@ -92,10 +97,37 @@ mod tests {
 
 
         let r = Ray::new(tuple::point(0.0, 0.0, -5.0), tuple::vector(0.0, 0.0, 1.0));
-        let s = Sphere::new(tuple::point(0.0, 0.0, 0.0), 1.0);
+        let s = Sphere::new();
         let xs = s.intersects(r);
         assert_eq!(xs.len(), 2);
         assert_eq!(&xs[0].object, &s);
         assert_eq!(&xs[1].object, &s);
+    }
+
+    #[test]
+    fn sphere_transforms() {
+        let s = Sphere::new();
+        assert_eq!(s.transform, Matrix4::identity());
+
+        let mut s = Sphere::new();
+        let t = transformation::translation(2.0, 3.0, 4.0);
+        s.set_transform(t);
+        assert_eq!(s.transform, t);
+
+        // Intersecting a scaled sphere with a ray
+        let r = Ray::new(tuple::point(0.0, 0.0, -5.0), tuple::vector(0.0, 0.0, 1.0));
+        let mut s = Sphere::new();
+        s.set_transform(transformation::scaling(2.0, 2.0, 2.0));
+        let xs = s.intersects(r);
+        assert_eq!(xs.len(), 2);
+        assert_eq!(xs[0].t, 3.0);
+        assert_eq!(xs[1].t, 7.0);
+
+        // Intersecting a translated sphere with a ray
+        let r = Ray::new(tuple::point(0.0, 0.0, -5.0), tuple::vector(0.0, 0.0, 1.0));
+        let mut s = Sphere::new();
+        s.set_transform(transformation::translation(5.0, 0.0, 0.0));
+        let xs = s.intersects(r);
+        assert_eq!(xs.len(), 0);
     }
 }

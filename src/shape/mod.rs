@@ -5,6 +5,7 @@
 use crate::ray::Ray;
 use std::sync::Mutex;
 use crate::intersection::Intersection;
+use crate::matrix::Matrix4;
 
 pub mod sphere;
 
@@ -19,6 +20,7 @@ pub fn get_shape_id() -> i32{
 }
 
 
-trait Shape<T> {
+pub trait Shape<T: Copy> {
     fn intersects(&self, ray: Ray) -> Vec<Intersection<T>>;
+    fn set_transform(&mut self, transform: Matrix4);
 }
