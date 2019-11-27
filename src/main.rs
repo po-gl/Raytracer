@@ -1,8 +1,8 @@
 //! # Main
 //! `main` drives the program
 
-
 const FLOAT_THRESHOLD: f64 = 0.00001;
+const TEST_ARG: &str = "Clock";
 
 #[macro_use] extern crate impl_ops;
 #[macro_use] extern crate lazy_static;
@@ -25,8 +25,11 @@ use std::f64::consts::PI;
 
 
 fn main() {
-    draw_clock();
-//    draw_arch();
+    match TEST_ARG {
+        "--draw-clock" => draw_clock(),
+        "--draw-arch" => draw_arch(),
+        _ => println!("No valid argument.")
+    }
 }
 
 // Below is miscellaneous functions for testing
