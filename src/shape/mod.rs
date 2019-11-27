@@ -3,8 +3,8 @@
 
 
 use crate::ray::Ray;
-use crate::float::Float;
 use std::sync::Mutex;
+use crate::intersection::Intersection;
 
 pub mod sphere;
 
@@ -19,7 +19,6 @@ pub fn get_shape_id() -> i32{
 }
 
 
-trait Shape {
-
-    fn intersects(&self, ray: Ray) -> Vec<Float>;
+trait Shape<T> {
+    fn intersects(&self, ray: Ray) -> Vec<Intersection<T>>;
 }

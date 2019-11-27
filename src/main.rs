@@ -12,6 +12,7 @@ pub mod tuple;
 pub mod matrix;
 pub mod transformation;
 pub mod ray;
+pub mod intersection;
 pub mod color;
 pub mod shape;
 pub mod canvas;
@@ -21,7 +22,6 @@ use tuple::Tuple;
 use canvas::Canvas;
 use crate::color::Color;
 use std::f64::consts::PI;
-use crate::float::Float;
 
 
 fn main() {
