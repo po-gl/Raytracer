@@ -19,7 +19,9 @@ impl<T: Copy> Intersection<T> {
 /// A partial function that returns the intersection with the lowest t value
 /// If all t values are negative, then None is returned
 pub fn hit<T: Copy>(intersections: Vec<Intersection<T>>) -> Option<Intersection<T>> {
-    assert!(intersections.len() > 0);
+    if intersections.len() == 0 {
+        return None
+    }
     let mut min_intersect: Intersection<T> = intersections[0];
     let mut min_t = Float::max();
     for intersect in intersections {
