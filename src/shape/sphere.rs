@@ -58,8 +58,16 @@ impl Shape for Sphere {
         self.transform
     }
 
+    fn set_transform(&mut self, transform: Matrix4) {
+        self.transform = transform;
+    }
+
     fn material(&self) -> Material {
         self.material
+    }
+
+    fn set_material(&mut self, material: Material) {
+        self.material = material;
     }
 
     fn intersects(&self, ray: &Ray) -> Vec<Intersection<Box<dyn Shape>>> {
@@ -82,10 +90,6 @@ impl Shape for Sphere {
             return vec![Intersection::new(t1, Box::new(*self)),
                         Intersection::new(t2, Box::new(*self))];
         }
-    }
-
-    fn set_transform(&mut self, transform: Matrix4) {
-        self.transform = transform;
     }
 
     fn normal_at(&self, world_point: &Tuple) -> Tuple {

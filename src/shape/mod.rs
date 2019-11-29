@@ -36,11 +36,13 @@ pub trait Shape: Any {
 
     fn transform(&self) -> Matrix4;
 
+    fn set_transform(&mut self, transform: Matrix4);
+
     fn material(&self) -> Material;
 
-    fn intersects(&self, ray: &Ray) -> Vec<Intersection<Box<dyn Shape>>>;
+    fn set_material(&mut self, material: Material);
 
-    fn set_transform(&mut self, transform: Matrix4);
+    fn intersects(&self, ray: &Ray) -> Vec<Intersection<Box<dyn Shape>>>;
 
     fn normal_at(&self, point: &Tuple) -> Tuple;
 }
