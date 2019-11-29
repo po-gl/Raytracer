@@ -7,6 +7,7 @@ use crate::material::Material;
 use crate::tuple;
 use crate::float::Float;
 
+#[derive(Debug, PartialEq)]
 pub struct Light {
     pub position: Tuple,
     pub intensity: Color,
