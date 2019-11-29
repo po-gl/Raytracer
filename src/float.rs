@@ -5,6 +5,7 @@ use std::ops;
 use crate::FLOAT_THRESHOLD;
 use std::cmp::Ordering;
 use std::f64::MAX;
+use std::fmt::{Display, Formatter, Error};
 
 #[derive(Debug, Copy, Clone)]
 pub struct Float(pub f64);
@@ -77,6 +78,13 @@ impl PartialEq<Float> for f64 {
 impl PartialOrd<Float> for Float {
     fn partial_cmp(&self, other: &Float) -> Option<Ordering> {
         self.0.partial_cmp(&other.0)
+    }
+}
+
+// Display formatter
+impl Display for Float {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(f, "{}F", self.value())
     }
 }
 
