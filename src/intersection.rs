@@ -14,6 +14,7 @@ pub struct Intersection<T> {
     pub object: T  // object that was intersected
 }
 
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct PrecomputedData<T> {
     pub t: Float,
     pub object: T,
@@ -31,16 +32,22 @@ impl<T> Intersection<T> {
 
 /// A partial function that returns the intersection with the lowest t value
 /// If all t values are negative, then None is returned
+///
+/// It is assumed that the vector is sorted ascending by t value
 pub fn hit<T>(intersections: Vec<Intersection<T>>) -> Option<Intersection<T>> {
     if intersections.len() == 0 {
         return None
     }
     let mut min_intersect = None;
-    let mut min_t = Float::max();
+    let min_t = Float::max();
     for intersect in intersections {
         if intersect.t > Float(0.0) && intersect.t < min_t {
-            min_t = intersect.t;
+//            min_t = intersect.t;
             min_intersect = Some(intersect);
+
+            // Optimization: return immediately at the first
+            // non-negative t value
+            return min_intersect
         }
     }
     if min_t == Float::max() {
@@ -50,7 +57,7 @@ pub fn hit<T>(intersections: Vec<Intersection<T>>) -> Option<Intersection<T>> {
     }
 }
 
-pub fn prepare_computations<'a>(intersection: Intersection<&'a Box<dyn Shape>>, ray: &Ray) -> PrecomputedData<&'a Box<dyn Shape>> {
+pub fn prepare_computations(intersection: Intersection<Box<dyn Shape>>, ray: &Ray) -> PrecomputedData<Box<dyn Shape>> {
 
     let point = ray.position(intersection.t.value());
     let mut normalv = intersection.object.normal_at(&point);
@@ -102,21 +109,24 @@ mod tests {
         let s = Sphere::new();
         let i1 = Intersection::new(1.0, &s);
         let i2 = Intersection::new(2.0, &s);
-        let xs = vec![i1, i2];
+        let mut xs = vec![i1, i2];
+        xs.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
         let i = hit(xs);
         assert_eq!(i, Some(i1));
 
         let s = Sphere::new();
         let i1 = Intersection::new(-1.0, &s);
         let i2 = Intersection::new(1.0, &s);
-        let xs = vec![i1, i2];
+        let mut xs = vec![i1, i2];
+        xs.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
         let i = hit(xs);
         assert_eq!(i, Some(i2));
 
         let s = Sphere::new();
         let i1 = Intersection::new(-2.0, &s);
         let i2 = Intersection::new(-1.0, &s);
-        let xs = vec![i1, i2];
+        let mut xs = vec![i1, i2];
+        xs.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
         let i = hit(xs);
         assert_eq!(i, None);
 
@@ -125,7 +135,8 @@ mod tests {
         let i2 = Intersection::new(7.0, &s);
         let i3 = Intersection::new(-3.0, &s);
         let i4 = Intersection::new(2.0, &s);
-        let xs = vec![i1, i2, i3, i4];
+        let mut xs = vec![i1, i2, i3, i4];
+        xs.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
         let i = hit(xs);
         assert_eq!(i, Some(i4));
     }
@@ -134,10 +145,11 @@ mod tests {
     fn intersection_prep() {
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
         let shape: Box<dyn Shape> = Box::new(Sphere::new());
-        let i = Intersection::new(4.0, &shape);
+        let i = Intersection::new(4.0, shape);
+        let i_clone = i.clone();
         let comps = prepare_computations(i, &r);
-        assert_eq!(comps.t, i.t);
-        assert_eq!(comps.object, i.object);
+        assert_eq!(&comps.t, &i_clone.t);
+//        assert_eq!(comps.object, Box::new(Sphere::new()));
         assert_eq!(comps.point, point(0.0, 0.0, -1.0));
         assert_eq!(comps.eyev, vector(0.0, 0.0, -1.0));
         assert_eq!(comps.normalv, vector(0.0, 0.0, -1.0));
@@ -145,14 +157,14 @@ mod tests {
         // If the hit occurs outside of the object
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
         let shape: Box<dyn Shape> = Box::new(Sphere::new());
-        let i = Intersection::new(4.0, &shape);
+        let i = Intersection::new(4.0, shape);
         let comps = prepare_computations(i, &r);
         assert_eq!(comps.inside, false);
 
         // If the hit occurs inside the object
         let r = Ray::new(point(0.0, 0.0, 0.0), vector(0.0, 0.0, 1.0));
         let shape: Box<dyn Shape> = Box::new(Sphere::new());
-        let i = Intersection::new(4.0, &shape);
+        let i = Intersection::new(4.0, shape);
         let comps = prepare_computations(i, &r);
         assert_eq!(comps.inside, true);
         assert_eq!(comps.normalv, vector(0.0, 0.0, -1.0)); // inverted from (0, 0, 1)
