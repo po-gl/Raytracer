@@ -2,7 +2,7 @@
 //! `main` drives the program
 
 const FLOAT_THRESHOLD: f64 = 0.00001;
-const TEST_ARG: &str = "--draw-shaded-circle";
+const TEST_ARG: &str = "--draw-shaded-nurple";
 
 #[macro_use] extern crate impl_ops;
 #[macro_use] extern crate lazy_static;
@@ -17,6 +17,7 @@ pub mod color;
 pub mod material;
 pub mod shape;
 pub mod light;
+pub mod world;
 pub mod canvas;
 pub mod file;
 
@@ -31,7 +32,6 @@ use crate::intersection::hit;
 use crate::tuple::{point, vector};
 use crate::material::Material;
 use crate::light::Light;
-
 
 fn main() {
     match TEST_ARG {
@@ -50,7 +50,7 @@ fn draw_shaded_circle() {
     let canvas_pixels = 500;
 
     let mut material = Material::new();
-    material.color = Color::from_hex("28AFB0");
+    material.color = Color::from_hex("19647E");
     let shape = Sphere::new_with_material(material);
 
     let light = Light::point_light(&point(-10.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0));
@@ -81,11 +81,11 @@ fn draw_shaded_circle() {
             let xs = shape.intersects(&ray);
             let hit = hit(xs);
             if hit != None {
-                let point = &ray.position(hit.unwrap().t.value());
-                let normal = &hit.unwrap().object.normal_at(point);
+                let point = &ray.position(hit.as_ref().unwrap().t.value());
+                let normal = hit.as_ref().unwrap().object.normal_at(point);
                 let eye = -&ray.direction;
 
-                let color = light::lighting(&hit.unwrap().object.material, &light, point, &eye, normal);
+                let color = light::lighting(&hit.as_ref().unwrap().object.material(), &light, point, &eye, &normal);
                 canvas.write_pixel(x, y, &color);
             }
         }

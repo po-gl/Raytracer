@@ -10,6 +10,8 @@ use crate::matrix::Matrix4;
 use crate::tuple::{Tuple, point};
 use crate::float::Float;
 use crate::material::Material;
+use std::any::Any;
+use std::fmt::{Formatter, Error};
 
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -32,7 +34,35 @@ impl Sphere {
 }
 
 impl Shape for Sphere {
-    fn intersects(&self, ray: &Ray) -> Vec<Intersection<Sphere>> {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn box_eq(&self, other: &dyn Any) -> bool {
+        other.downcast_ref::<Self>().map_or(false, |a| self == a)
+    }
+
+    fn debug_fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(f, "Box {:?}", self)
+    }
+
+    fn shape_clone(&self) -> Box<dyn Shape> {
+        Box::new(*self)
+    }
+
+    fn id(&self) -> i32 {
+        self.id
+    }
+
+    fn transform(&self) -> Matrix4 {
+        self.transform
+    }
+
+    fn material(&self) -> Material {
+        self.material
+    }
+
+    fn intersects(&self, ray: &Ray) -> Vec<Intersection<Box<dyn Shape>>> {
         // Transform the ray
         let t_ray = ray.transform(&self.transform.inverse());
         // vector from the sphere's center to the ray origin
@@ -45,12 +75,12 @@ impl Shape for Sphere {
         let discriminant = b * b - 4.0 * a * c;
 
         if discriminant < 0.0 {
-            return vec![Intersection::new(0.0, *self); 0]
+            return vec![Intersection::new(0.0, Box::new(*self)); 0]
         } else {
             let t1 = (-b - discriminant.sqrt()) / (2.0 * a);
             let t2 = (-b + discriminant.sqrt()) / (2.0 * a);
-            return vec![Intersection::new(t1, *self),
-                        Intersection::new(t2, *self)];
+            return vec![Intersection::new(t1, Box::new(*self)),
+                        Intersection::new(t2, Box::new(*self))];
         }
     }
 
@@ -119,8 +149,10 @@ mod tests {
         let s = Sphere::new();
         let xs = s.intersects(&r);
         assert_eq!(xs.len(), 2);
-        assert_eq!(&xs[0].object, &s);
-        assert_eq!(&xs[1].object, &s);
+        assert!(s.box_eq(xs[0].object.as_any()));
+        assert!(s.box_eq(xs[1].object.as_any()));
+//        assert_eq!(&xs[0].object, &s);
+//        assert_eq!(&xs[1].object, &s);
     }
 
     #[test]

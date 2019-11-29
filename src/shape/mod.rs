@@ -7,6 +7,9 @@ use std::sync::Mutex;
 use crate::intersection::Intersection;
 use crate::matrix::Matrix4;
 use crate::tuple::Tuple;
+use std::any::Any;
+use std::fmt::{Debug, Formatter, Error};
+use crate::material::Material;
 
 pub mod sphere;
 
@@ -20,11 +23,42 @@ pub fn get_shape_id() -> i32{
     *id
 }
 
+pub trait Shape: Any {
+    fn as_any(&self) -> &dyn Any;
 
-pub trait Shape {
-    fn intersects(&self, ray: &Ray) -> Vec<Intersection<Self>> where Self: Copy;
+    fn box_eq(&self, other: &dyn Any) -> bool;
+
+    fn debug_fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error>;
+
+    fn shape_clone(&self) -> Box<dyn Shape>;
+
+    fn id(&self) -> i32;
+
+    fn transform(&self) -> Matrix4;
+
+    fn material(&self) -> Material;
+
+    fn intersects(&self, ray: &Ray) -> Vec<Intersection<Box<dyn Shape>>>;
 
     fn set_transform(&mut self, transform: Matrix4);
 
     fn normal_at(&self, point: &Tuple) -> Tuple;
+}
+
+impl PartialEq for Box<dyn Shape> {
+    fn eq(&self, other: &Box<dyn Shape>) -> bool {
+        self.box_eq(other.as_any())
+    }
+}
+
+impl Debug for Box<dyn Shape> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        self.debug_fmt(f)
+    }
+}
+
+impl Clone for Box<dyn Shape> {
+    fn clone(&self) -> Self {
+        self.shape_clone()
+    }
 }
