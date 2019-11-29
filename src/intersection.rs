@@ -3,11 +3,24 @@
 /// the t value and the object that was intersected
 
 use crate::float::Float;
+use crate::ray::Ray;
+use crate::tuple::Tuple;
+use crate::shape::Shape;
+use crate::tuple;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Intersection<T> {
     pub t: Float,
     pub object: T  // object that was intersected
+}
+
+pub struct PrecomputedData<T> {
+    pub t: Float,
+    pub object: T,
+    pub point: Tuple,
+    pub eyev: Tuple,
+    pub normalv: Tuple,
+    pub inside: bool,
 }
 
 impl<T> Intersection<T> {
@@ -37,11 +50,33 @@ pub fn hit<T>(intersections: Vec<Intersection<T>>) -> Option<Intersection<T>> {
     }
 }
 
+pub fn prepare_computations<T: Copy+Shape>(intersection: Intersection<T>, ray: &Ray) -> PrecomputedData<T> {
+
+    let point = ray.position(intersection.t.value());
+    let mut normalv = intersection.object.normal_at(&point);
+    let eyev = -ray.direction;
+    let inside = Float(tuple::dot(&normalv, &eyev)) < Float(0.0);
+
+    // if inside, invert normal
+    if inside {normalv = -normalv}
+
+
+    PrecomputedData {
+        t: intersection.t,
+        object: intersection.object,
+        point,
+        eyev,
+        normalv,
+        inside,
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::shape::sphere::Sphere;
+    use crate::tuple::{point, vector};
 
     #[test]
     fn intersection_creation() {
@@ -93,5 +128,33 @@ mod tests {
         let xs = vec![i1, i2, i3, i4];
         let i = hit(xs);
         assert_eq!(i, Some(i4));
+    }
+
+    #[test]
+    fn intersection_prep() {
+        let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
+        let shape = Sphere::new();
+        let i = Intersection::new(4.0, shape);
+        let comps = prepare_computations(i, &r);
+        assert_eq!(comps.t, i.t);
+        assert_eq!(comps.object, i.object);
+        assert_eq!(comps.point, point(0.0, 0.0, -1.0));
+        assert_eq!(comps.eyev, vector(0.0, 0.0, -1.0));
+        assert_eq!(comps.normalv, vector(0.0, 0.0, -1.0));
+
+        // If the hit occurs outside of the object
+        let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
+        let shape = Sphere::new();
+        let i = Intersection::new(4.0, shape);
+        let comps = prepare_computations(i, &r);
+        assert_eq!(comps.inside, false);
+
+        // If the hit occurs inside the object
+        let r = Ray::new(point(0.0, 0.0, 0.0), vector(0.0, 0.0, 1.0));
+        let shape = Sphere::new();
+        let i = Intersection::new(4.0, shape);
+        let comps = prepare_computations(i, &r);
+        assert_eq!(comps.inside, true);
+        assert_eq!(comps.normalv, vector(0.0, 0.0, -1.0)); // inverted from (0, 0, 1)
     }
 }
