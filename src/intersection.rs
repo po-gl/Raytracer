@@ -5,12 +5,12 @@
 use crate::float::Float;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
-pub struct Intersection<T: Copy> {
+pub struct Intersection<T> {
     pub t: Float,
     pub object: T  // object that was intersected
 }
 
-impl<T: Copy> Intersection<T> {
+impl<T> Intersection<T> {
     pub fn new(t: f64, object: T) -> Intersection<T> {
        Intersection {t: Float(t), object}
     }
@@ -18,22 +18,22 @@ impl<T: Copy> Intersection<T> {
 
 /// A partial function that returns the intersection with the lowest t value
 /// If all t values are negative, then None is returned
-pub fn hit<T: Copy>(intersections: Vec<Intersection<T>>) -> Option<Intersection<T>> {
+pub fn hit<T>(intersections: Vec<Intersection<T>>) -> Option<Intersection<T>> {
     if intersections.len() == 0 {
         return None
     }
-    let mut min_intersect: Intersection<T> = intersections[0];
+    let mut min_intersect = None;
     let mut min_t = Float::max();
     for intersect in intersections {
         if intersect.t > Float(0.0) && intersect.t < min_t {
             min_t = intersect.t;
-            min_intersect = intersect;
+            min_intersect = Some(intersect);
         }
     }
     if min_t == Float::max() {
         None // If all intersect t's are negative return None
     } else {
-        Some(min_intersect)
+        min_intersect
     }
 }
 
