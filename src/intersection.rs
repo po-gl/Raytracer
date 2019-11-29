@@ -50,7 +50,7 @@ pub fn hit<T>(intersections: Vec<Intersection<T>>) -> Option<Intersection<T>> {
     }
 }
 
-pub fn prepare_computations<T: Copy+Shape>(intersection: Intersection<T>, ray: &Ray) -> PrecomputedData<T> {
+pub fn prepare_computations<'a>(intersection: Intersection<&'a Box<dyn Shape>>, ray: &Ray) -> PrecomputedData<&'a Box<dyn Shape>> {
 
     let point = ray.position(intersection.t.value());
     let mut normalv = intersection.object.normal_at(&point);
@@ -133,8 +133,8 @@ mod tests {
     #[test]
     fn intersection_prep() {
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
-        let shape = Sphere::new();
-        let i = Intersection::new(4.0, shape);
+        let shape: Box<dyn Shape> = Box::new(Sphere::new());
+        let i = Intersection::new(4.0, &shape);
         let comps = prepare_computations(i, &r);
         assert_eq!(comps.t, i.t);
         assert_eq!(comps.object, i.object);
@@ -144,15 +144,15 @@ mod tests {
 
         // If the hit occurs outside of the object
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
-        let shape = Sphere::new();
-        let i = Intersection::new(4.0, shape);
+        let shape: Box<dyn Shape> = Box::new(Sphere::new());
+        let i = Intersection::new(4.0, &shape);
         let comps = prepare_computations(i, &r);
         assert_eq!(comps.inside, false);
 
         // If the hit occurs inside the object
         let r = Ray::new(point(0.0, 0.0, 0.0), vector(0.0, 0.0, 1.0));
-        let shape = Sphere::new();
-        let i = Intersection::new(4.0, shape);
+        let shape: Box<dyn Shape> = Box::new(Sphere::new());
+        let i = Intersection::new(4.0, &shape);
         let comps = prepare_computations(i, &r);
         assert_eq!(comps.inside, true);
         assert_eq!(comps.normalv, vector(0.0, 0.0, -1.0)); // inverted from (0, 0, 1)
