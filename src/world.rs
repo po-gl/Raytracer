@@ -7,10 +7,10 @@ use crate::shape::sphere::Sphere;
 use crate::material::Material;
 use crate::color::Color;
 use crate::float::Float;
-use crate::transformation;
+use crate::{transformation, light, intersection};
 use crate::tuple::point;
 use crate::ray::Ray;
-use crate::intersection::Intersection;
+use crate::intersection::{Intersection, PrecomputedData};
 
 pub struct World {
     pub objects: Vec<Box<dyn Shape>>,
@@ -56,6 +56,18 @@ impl World {
         intersections
     }
 
+    pub fn shade_hit(&self, comps: PrecomputedData<Box<dyn Shape>>) -> Color {
+        // One light implementation for now
+        light::lighting(&comps.object.material(), &self.lights[0], &comps.point, &comps.eyev, &comps.normalv)
+    }
+
+    pub fn color_at(&self, ray: &Ray) -> Color {
+        let intersections = self.intersects(ray);
+        let hit = intersection::hit(intersections);
+        if hit == None {return Color::new(0.0, 0.0, 0.0)}  // Return black of no hits
+        let comps = intersection::prepare_computations(hit.unwrap(), ray);
+        self.shade_hit(comps)
+    }
 }
 
 
@@ -64,6 +76,7 @@ mod tests {
     use super::*;
     use crate::ray::Ray;
     use crate::tuple::vector;
+    use crate::intersection;
 
     #[test]
     fn world_creation() {
@@ -97,5 +110,60 @@ mod tests {
         assert_eq!(xs[1].t, 4.5);
         assert_eq!(xs[2].t, 5.5);
         assert_eq!(xs[3].t, 6.0);
+    }
+
+    #[test]
+    fn world_shading() {
+        // Shading an intersection
+        let w = World::default_world();
+        let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
+        let shape = w.objects[0].clone();
+        let i = Intersection::new(4.0, shape);
+        let comps = intersection::prepare_computations(i, &r);
+        let c = w.shade_hit(comps);
+        assert_eq!(c, Color::new(0.38066, 0.47583, 0.2855));
+
+        // Shading an intsersection from the inside
+        let mut w = World::default_world();
+        w.lights[0] = Light::point_light(&point(0.0, 0.25, 0.0), &Color::new(1.0, 1.0, 1.0));
+        let r = Ray::new(point(0.0, 0.0, 0.0), vector(0.0, 0.0, 1.0));
+        let shape = w.objects[1].clone();
+        let i = Intersection::new(0.5, shape);
+        let comps = intersection::prepare_computations(i, &r);
+        let c = w.shade_hit(comps);
+        assert_eq!(c, Color::new(0.90498, 0.90498, 0.90498));
+    }
+
+    #[test]
+    fn world_color_at() {
+        // Ray doesn't intersect anything
+        let w = World::default_world();
+        let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 1.0, 0.0));
+        let c = w.color_at(&r);
+        assert_eq!(c, Color::new(0.0, 0.0, 0.0));
+
+        // Intersects outermost sphere
+        let w = World::default_world();
+        let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
+        let c = w.color_at(&r);
+        assert_eq!(c, Color::new(0.38066, 0.47583, 0.2855));
+
+        // Pointing at inner sphere from inside outer sphere
+        let mut w = World::default_world();
+        let outer = &mut w.objects[0];
+        let mut material = outer.material();
+        material.ambient = Float(1.0);
+        outer.set_material(material);
+
+        let inner = &mut w.objects[1];
+        let mut material = inner.material();
+        material.ambient = Float(1.0);
+        inner.set_material(material);
+        let inner_color = inner.material().color;
+
+        let r = Ray::new(point(0.0, 0.0, 0.75), vector(0.0, 0.0, -1.0));
+        let c = w.color_at(&r);
+
+        assert_eq!(c, inner_color);
     }
 }
