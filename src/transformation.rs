@@ -3,6 +3,8 @@
 
 use super::float::Float;
 use super::matrix::Matrix4;
+use crate::tuple::Tuple;
+use crate::tuple;
 
 
 /// Returns a 4x4 matrix used to translate either a tuple or matrix
@@ -70,6 +72,24 @@ pub fn shearing(x_y: f64, x_z: f64, y_x: f64, y_z: f64, z_x: f64, z_y: f64) -> M
     new_mat
 }
 
+/// Returns a 4x4 matrix that is the modified view transformation matrix
+///
+/// "from" is where the camera starts and "to" is where it ends
+/// "up" is a vector representing upwards from the camera
+pub fn view_transform(from: Tuple, to: Tuple, up: Tuple) -> Matrix4 {
+    let forward = (to - from).normalize();
+    let up_n = up.normalize();
+    let left = tuple::cross(&forward, &up_n);
+    let true_up = tuple::cross(&left, &forward);
+
+    let orientation = Matrix4::new(
+        [[left.x.value(), left.y.value(), left.z.value(), 0.0],
+         [true_up.x.value(), true_up.y.value(), true_up.z.value(), 0.0],
+         [-forward.x.value(), -forward.y.value(), -forward.z.value(), 0.0],
+         [0.0, 0.0, 0.0, 1.0]]);
+
+    orientation * translation(-from.x.value(), -from.y.value(), -from.z.value())
+}
 
 #[cfg(test)]
 mod tests {
@@ -203,6 +223,41 @@ mod tests {
         let c = translation(10.0, 5.0, 7.0);
         let t = c * b * a;
         assert_eq!(t * p, point(15.0, 0.0, 7.0));
+    }
 
+    #[test]
+    fn transformation_view() {
+        // Default view
+        let from = point(0.0, 0.0, 0.0);
+        let to = point(0.0, 0.0, -1.0);
+        let up = vector(0.0, 1.0, 0.0);
+        let t = view_transform(from, to, up);
+        assert_eq!(t, Matrix4::identity());
+
+        // Looking backwards
+        let from = point(0.0, 0.0, 0.0);
+        let to = point(0.0, 0.0, 1.0);
+        let up = vector(0.0, 1.0, 0.0);
+        let t = view_transform(from, to, up);
+        assert_eq!(t, scaling(-1.0, 1.0, -1.0));
+
+        // Moving around now
+        let from = point(0.0, 0.0, 8.0);
+        let to = point(0.0, 0.0, 0.0);
+        let up = vector(0.0, 1.0, 0.0);
+        let t = view_transform(from, to, up);
+        assert_eq!(t, translation(0.0, 0.0, -8.0));
+
+        // Arbitrary movement
+        let from = point(1.0, 3.0, 2.0);
+        let to = point(4.0, -2.0, 8.0);
+        let up = vector(1.0, 1.0, 0.0);
+        let t = view_transform(from, to, up);
+        let m = Matrix4::new(
+            [[-0.50709, 0.50709, 0.67612, -2.36643],
+             [0.76772, 0.60609, 0.12122, -2.82843],
+             [-0.35857, 0.59761, -0.71714, 0.00000],
+             [0.00000, 0.00000, 0.00000, 1.00000]]);
+        assert_eq!(t, m);
     }
 }
