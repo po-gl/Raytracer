@@ -2,7 +2,7 @@
 //! `main` drives the program
 
 const FLOAT_THRESHOLD: f64 = 0.00001;
-const TEST_ARG: &str = "--draw-shaded-nurple";
+const TEST_ARG: &str = "--draw-first-scene";
 
 #[macro_use] extern crate impl_ops;
 #[macro_use] extern crate lazy_static;
@@ -18,6 +18,7 @@ pub mod material;
 pub mod shape;
 pub mod light;
 pub mod world;
+pub mod camera;
 pub mod canvas;
 pub mod file;
 
@@ -28,10 +29,14 @@ use std::f64::consts::PI;
 use crate::ray::Ray;
 use crate::shape::sphere::Sphere;
 use crate::shape::Shape;
-use crate::intersection::hit;
+use crate::intersection::{hit};
 use crate::tuple::{point, vector};
 use crate::material::Material;
 use crate::light::Light;
+use crate::transformation::{scaling, translation, rotation_y, rotation_x, view_transform};
+use crate::float::Float;
+use crate::world::World;
+use crate::camera::Camera;
 
 fn main() {
     match TEST_ARG {
@@ -39,12 +44,102 @@ fn main() {
         "--draw-clock" => draw_clock(),
         "--draw-circle" => draw_circle(),
         "--draw-shaded-circle" => draw_shaded_circle(),
+        "--draw-first-scene" => draw_first_scene(),
         _ => println!("No valid argument.")
     }
+
+//    // Pointing at inner sphere from inside outer sphere
+//    let mut w = World::default_world();
+//
+//    println!("outer before: {:?}", w.objects[0].material().ambient);
+//    let outer = &mut w.objects[0];
+//    let mut material = outer.material();
+//    material.ambient = Float(1.0);
+//    outer.set_material(material);
+//    println!("outer after: {:?}", w.objects[0].material().ambient);
+//
+//    let inner = &mut w.objects[1];
+//    inner.material().ambient = Float(1.0);
+//    let inner_color = inner.material().color;
+//
+//    let r = Ray::new(point(0.0, 0.0, 0.75), vector(0.0, 0.0, -1.0));
+//    let c = w.color_at(&r);
+
+
 }
 
 // Below is miscellaneous functions for testing and drawing
 
+fn draw_first_scene() {
+    // Options
+    let canvas_width = 1920;
+    let canvas_height = 1080;
+    let fov = PI/3.0;
+
+    // Construct world
+    let mut world = World::new();
+
+    let mut floor = Sphere::new();
+    floor.transform = scaling(10.0, 0.01, 10.0);
+    let mut material = Material::new();
+    material.color = Color::from_hex("E6EBE0");
+    material.specular = Float(0.0);
+    floor.material = material;
+    world.objects.push(Box::new(floor));
+
+    let mut left_wall = Sphere::new();
+    left_wall.transform = translation(0.0, 0.0, 5.0) *
+        rotation_y(-PI/4.0) * rotation_x(PI/2.0) *
+        scaling(10.0, 0.01, 10.0);
+    left_wall.material = floor.material;
+    world.objects.push(Box::new(left_wall));
+
+    let mut right_wall = Sphere::new();
+    right_wall.transform = translation(0.0, 0.0, 5.0) *
+        rotation_y(PI/4.0) * rotation_x(PI/2.0) *
+        scaling(10.0, 0.01, 10.0);
+    right_wall.material = floor.material;
+    world.objects.push(Box::new(right_wall));
+
+    let mut middle_sphere = Sphere::new();
+    middle_sphere.transform = translation(-0.5, 1.0, 0.5);
+    let mut material = Material::new();
+    material.color = Color::from_hex("ED412A");
+    material.diffuse = Float(0.7);
+    material.specular = Float(0.7);
+    middle_sphere.material = material;
+    world.objects.push(Box::new(middle_sphere));
+
+    let mut right_sphere = Sphere::new();
+    right_sphere.transform = translation(1.5, 0.5, -0.5) * scaling(0.5, 0.5, 0.5);
+    let mut material = Material::new();
+    material.color = Color::from_hex("C3F4EE");
+    material.diffuse = Float(0.7);
+    material.specular = Float(0.3);
+    right_sphere.material = material;
+    world.objects.push(Box::new(right_sphere));
+
+    let mut left_sphere = Sphere::new();
+    left_sphere.transform = translation(-1.5, 0.33, -0.75) * scaling(0.33, 0.33, 0.33);
+    let mut material = Material::new();
+    material.color = Color::from_hex("F4EE70");
+    material.diffuse = Float(0.7);
+    material.specular = Float(0.3);
+    left_sphere.material = material;
+    world.objects.push(Box::new(left_sphere));
+
+    let light = Light::point_light(&point(-10.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0));
+    world.lights.push(light);
+
+    // Create camera and render scene
+    let mut camera = Camera::new(canvas_width, canvas_height, fov);
+    camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
+
+    let canvas = camera.render(world);
+    file::write_to_file(canvas.to_ppm(), String::from("first_scene.ppm"))
+}
+
+//--------------------------------------------------
 
 fn draw_shaded_circle() {
     let canvas_pixels = 500;
@@ -85,7 +180,7 @@ fn draw_shaded_circle() {
                 let normal = hit.as_ref().unwrap().object.normal_at(point);
                 let eye = -&ray.direction;
 
-                let color = light::lighting(&hit.as_ref().unwrap().object.material(), &light, point, &eye, &normal);
+                let color = light::lighting(&hit.as_ref().unwrap().object.material(), &light, point, &eye, &normal, false);
                 canvas.write_pixel(x, y, &color);
             }
         }
