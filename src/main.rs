@@ -2,10 +2,11 @@
 //! `main` drives the program
 
 const FLOAT_THRESHOLD: f64 = 0.00001;
-const TEST_ARG: &str = "--draw-first-scene";
 
 #[macro_use] extern crate impl_ops;
 #[macro_use] extern crate lazy_static;
+
+use std::env;
 
 pub mod float;
 pub mod tuple;
@@ -25,12 +26,33 @@ pub mod file;
 
 
 fn main() {
-    match TEST_ARG {
-        "--draw-arch" => examples::draw_arch(),
-        "--draw-clock" => examples::draw_clock(),
-        "--draw-circle" => examples::draw_circle(),
-        "--draw-shaded-circle" => examples::draw_shaded_circle(),
-        "--draw-first-scene" => examples::draw_first_scene(),
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        return
+    }
+    let example = &args[1];
+
+    match example.as_str() {
+        "draw-arch" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_arch();
+        },
+        "draw-clock" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_clock()
+        },
+        "draw-circle" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_circle()
+        },
+        "draw-shaded-circle" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_shaded_circle()
+        },
+        "draw-first-scene" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_first_scene()
+        },
         _ => println!("No valid argument.")
     }
 }
