@@ -23,7 +23,8 @@ pub fn lighting(material: &Material,
                 light_source: &Light,
                 point: &Tuple,
                 eye_v: &Tuple,
-                normal_v: &Tuple) -> Color {
+                normal_v: &Tuple,
+                in_shadow: bool) -> Color {
     // Combine surface color with the light's color
     let effective_color = material.color * light_source.intensity;
 
@@ -40,7 +41,9 @@ pub fn lighting(material: &Material,
     // A negative number means the light is on the other side of the surface
     let light_dot_normal = Float(tuple::dot(&light_v, &normal_v));
 
-    if light_dot_normal < Float(0.0) {
+    // If light misses the surface or the surface is in shadow,
+    // ignore diffuse and specular components
+    if light_dot_normal < Float(0.0) || in_shadow {
         diffuse = Color::new(0.0, 0.0, 0.0); // black
         specular = Color::new(0.0, 0.0, 0.0); // black
     } else {
@@ -83,39 +86,53 @@ mod tests {
         let m = Material::new();
         let position = point(0.0, 0.0, 0.0);
 
+        let in_shadow = false;
+
         // Lighting with the eye between the light and the surface
         let eye_v = vector(0.0, 0.0, -1.0);
         let normal_v = vector(0.0, 0.0, -1.0);
         let light = Light::point_light(&point(0.0, 0.0, -10.0), &Color::new(1.0, 1.0, 1.0));
-        let result = lighting(&m, &light, &position, &eye_v, &normal_v);
+        let result = lighting(&m, &light, &position, &eye_v, &normal_v, in_shadow);
         assert_eq!(result, Color::new(1.9, 1.9, 1.9));
 
         // Lighting with the eye between the light and surface, eye offset 45 degrees
         let eye_v = vector(0.0, 2.0f64.sqrt()/2.0, -2.0f64.sqrt()/2.0);
         let normal_v = vector(0.0, 0.0, -1.0);
         let light = Light::point_light(&point(0.0, 0.0, -10.0), &Color::new(1.0, 1.0, 1.0));
-        let result = lighting(&m, &light, &position, &eye_v, &normal_v);
+        let result = lighting(&m, &light, &position, &eye_v, &normal_v, in_shadow);
         assert_eq!(result, Color::new(1.0, 1.0, 1.0));
 
         // Lighting with eye opposite surface, light offset 45 degrees
         let eye_v = vector(0.0, 0.0, -1.0);
         let normal_v = vector(0.0, 0.0, -1.0);
         let light = Light::point_light(&point(0.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0));
-        let result = lighting(&m, &light, &position, &eye_v, &normal_v);
+        let result = lighting(&m, &light, &position, &eye_v, &normal_v, in_shadow);
         assert_eq!(result, Color::new(0.7364, 0.7364, 0.7364));
 
         // Lighting with eye in the path of the reflection vector
         let eye_v = vector(0.0, -2.0f64.sqrt()/2.0, -2.0f64.sqrt()/2.0);
         let normal_v = vector(0.0, 0.0, -1.0);
         let light = Light::point_light(&point(0.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0));
-        let result = lighting(&m, &light, &position, &eye_v, &normal_v);
+        let result = lighting(&m, &light, &position, &eye_v, &normal_v, in_shadow);
         assert_eq!(result, Color::new(1.6364, 1.6364, 1.6364));
 
         // Lighting with the light behind the surface
         let eye_v = vector(0.0, 0.0, -1.0);
         let normal_v = vector(0.0, 0.0, -1.0);
         let light = Light::point_light(&point(0.0, 0.0, 10.0), &Color::new(1.0, 1.0, 1.0));
-        let result = lighting(&m, &light, &position, &eye_v, &normal_v);
+        let result = lighting(&m, &light, &position, &eye_v, &normal_v, in_shadow);
+        assert_eq!(result, Color::new(0.1, 0.1, 0.1));
+    }
+
+    #[test]
+    fn light_lighting_shadows() {
+        let m = Material::new();
+        let position = point(0.0, 0.0, 0.0);
+        let eye_v = vector(0.0, 0.0, -1.0);
+        let normal_v = vector(0.0, 0.0, -1.0);
+        let light = Light::point_light(&point(0.0, 0.0, -10.0), &Color::new(1.0, 1.0, 1.0));
+        let in_shadow = true;
+        let result = lighting(&m, &light, &position, &eye_v, &normal_v, in_shadow);
         assert_eq!(result, Color::new(0.1, 0.1, 0.1));
     }
 }
