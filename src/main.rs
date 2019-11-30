@@ -27,10 +27,12 @@ pub mod file;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        return
+    let example: &String;
+    if args.len() > 1 {
+        example = &args[1];
+    } else {
+        example = &args[0]; // set to invalid example
     }
-    let example = &args[1];
 
     match example.as_str() {
         "draw-arch" => {
