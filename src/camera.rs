@@ -4,7 +4,9 @@
 use crate::float::Float;
 use crate::matrix::Matrix4;
 use crate::ray::Ray;
-use crate::tuple::{point, vector};
+use crate::tuple::point;
+use crate::world::World;
+use crate::canvas::Canvas;
 
 #[derive(Debug)]
 pub struct Camera {
@@ -23,8 +25,8 @@ impl Camera {
         let half_view = (field_of_view/2.0).tan();
         let aspect_ratio = h_size as f64 / v_size as f64;
 
-        let mut half_width = 0.0;
-        let mut half_height = 0.0;
+        let half_width;
+        let half_height;
 
         if Float(aspect_ratio) >= Float(1.0) {
             half_width = half_view;
@@ -64,6 +66,19 @@ impl Camera {
 
         Ray::new(origin, direction)
     }
+
+    pub fn render(&self, world: World) -> Canvas {
+        let mut image = Canvas::new(self.h_size, self.v_size);
+
+        for y in 0..self.v_size {
+            for x in 0..self.h_size {
+                let ray = self.ray_for_pixel(x, y);
+                let color = world.color_at(&ray);
+                image.write_pixel(y, x, &color);
+            }
+        }
+        image
+    }
 }
 
 
@@ -71,7 +86,9 @@ impl Camera {
 mod tests {
     use super::*;
     use std::f64::consts::PI;
-    use crate::transformation::{rotation_y, translation};
+    use crate::transformation::{rotation_y, translation, view_transform};
+    use crate::color::Color;
+    use crate::tuple::vector;
 
     #[test]
     fn camera_creation() {
@@ -111,5 +128,17 @@ mod tests {
         let r = c.ray_for_pixel(100, 50);
         assert_eq!(r.origin, point(0.0, 2.0, -5.0));
         assert_eq!(r.direction, vector(2.0f64.sqrt()/2.0, 0.0, -2.0f64.sqrt()/2.0));
+    }
+
+    #[test]
+    fn camera_render() {
+        let w = World::default_world();
+        let mut c = Camera::new(11, 11, PI/2.0);
+        let from = point(0.0, 0.0, -5.0);
+        let to = point(0.0, 0.0, 0.0);
+        let up = vector(0.0, 1.0, 0.0);
+        c.transform = view_transform(from, to, up);
+        let image = c.render(w);
+        assert_eq!(image.pixel_at(5, 5), &Color::new(0.38066, 0.47583, 0.2855));
     }
 }
