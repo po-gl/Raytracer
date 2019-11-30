@@ -4,6 +4,7 @@
 use super::tuple::Tuple;
 use super::matrix::Matrix4;
 
+#[derive(Debug)]
 pub struct Ray {
     pub origin: Tuple,
     pub direction: Tuple
