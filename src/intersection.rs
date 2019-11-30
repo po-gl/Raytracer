@@ -6,7 +6,7 @@ use crate::float::Float;
 use crate::ray::Ray;
 use crate::tuple::Tuple;
 use crate::shape::Shape;
-use crate::tuple;
+use crate::{tuple, FLOAT_THRESHOLD};
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Intersection<T> {
@@ -19,6 +19,7 @@ pub struct PrecomputedData<T> {
     pub t: Float,
     pub object: T,
     pub point: Tuple,
+    pub over_point: Tuple,
     pub eyev: Tuple,
     pub normalv: Tuple,
     pub inside: bool,
@@ -67,11 +68,13 @@ pub fn prepare_computations(intersection: Intersection<Box<dyn Shape>>, ray: &Ra
     // if inside, invert normal
     if inside {normalv = -normalv}
 
+    let over_point = point + (normalv * FLOAT_THRESHOLD);
 
     PrecomputedData {
         t: intersection.t,
         object: intersection.object,
         point,
+        over_point,
         eyev,
         normalv,
         inside,
@@ -84,6 +87,7 @@ mod tests {
     use super::*;
     use crate::shape::sphere::Sphere;
     use crate::tuple::{point, vector};
+    use crate::{FLOAT_THRESHOLD, transformation};
 
     #[test]
     fn intersection_creation() {
@@ -168,5 +172,17 @@ mod tests {
         let comps = prepare_computations(i, &r);
         assert_eq!(comps.inside, true);
         assert_eq!(comps.normalv, vector(0.0, 0.0, -1.0)); // inverted from (0, 0, 1)
+    }
+
+    #[test]
+    fn intersection_over_point() {
+        let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
+        let mut s1 = Sphere::new();
+        s1.transform = transformation::translation(0.0, 0.0, 1.0);
+        let shape: Box<dyn Shape> = Box::new(s1);
+        let i = Intersection::new(5.0, shape);
+        let comps = prepare_computations(i, &r);
+        assert!(comps.over_point.z < Float(-FLOAT_THRESHOLD/2.0));
+        assert!(comps.point.z > comps.over_point.z);
     }
 }

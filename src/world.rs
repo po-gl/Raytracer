@@ -58,7 +58,7 @@ impl World {
 
     pub fn shade_hit(&self, comps: PrecomputedData<Box<dyn Shape>>) -> Color {
         // One light implementation for now
-        light::lighting(&comps.object.material(), &self.lights[0], &comps.point, &comps.eyev, &comps.normalv, self.is_shadowed(comps.point))
+        light::lighting(&comps.object.material(), &self.lights[0], &comps.point, &comps.eyev, &comps.normalv, self.is_shadowed(comps.over_point))
     }
 
     pub fn color_at(&self, ray: &Ray) -> Color {
@@ -74,20 +74,13 @@ impl World {
         let vector = self.lights[0].position - point;
         let distance = vector.magnitude();
         let direction = vector.normalize();
-        println!("Light pos: {:?}", self.lights[0].position);
-
-        println!("Spheres: {:?}", self.objects);
 
         let ray = Ray::new(point, direction);
-//        let ray = Ray::new(tuple::point(0.0, 0.0, -5.0), tuple::vector(0.0, 0.0, 1.0));
-        println!("Ray: {:?}", ray);
         let intersections = self.intersects(&ray);
-        println!("Intersections: {:?}", intersections);
 
         let hit = intersection::hit(intersections);
 
         // If there is a hit and the t value is less than the distance to the light, return true
-        println!("Hit: {:?}", hit);
         if hit != None {
             if hit.unwrap().t < Float(distance) {
                 true
