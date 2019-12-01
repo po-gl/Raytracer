@@ -33,7 +33,7 @@ pub fn draw_first_scene() {
     let mut floor = Sphere::new();
     floor.transform = scaling(10.0, 0.01, 10.0);
     let mut material = Material::new();
-    material.color = Color::from_hex("E6EBE0");
+    material.color = Color::from_hex("F2E2BA");
     material.specular = Float(0.0);
     floor.material = material;
     world.objects.push(Box::new(floor));
@@ -42,21 +42,25 @@ pub fn draw_first_scene() {
     left_wall.transform = translation(0.0, 0.0, 5.0) *
         rotation_y(-PI/4.0) * rotation_x(PI/2.0) *
         scaling(10.0, 0.01, 10.0);
-    left_wall.material = floor.material;
+    let mut material = Material::new();
+    material.color = Color::from_hex("D3F9FF");
+    left_wall.material = material;
     world.objects.push(Box::new(left_wall));
 
     let mut right_wall = Sphere::new();
     right_wall.transform = translation(0.0, 0.0, 5.0) *
         rotation_y(PI/4.0) * rotation_x(PI/2.0) *
         scaling(10.0, 0.01, 10.0);
-    right_wall.material = floor.material;
+    let mut material = Material::new();
+    material.color = Color::from_hex("D3F9FF");
+    right_wall.material = material;
     world.objects.push(Box::new(right_wall));
 
     let mut middle_sphere = Sphere::new();
     middle_sphere.transform = translation(-0.5, 1.0, 0.5);
     let mut material = Material::new();
-    material.color = Color::from_hex("ED412A");
-    material.diffuse = Float(0.7);
+    material.color = Color::from_hex("7AC16C");
+    material.diffuse = Float(0.8);
     material.specular = Float(0.7);
     middle_sphere.material = material;
     world.objects.push(Box::new(middle_sphere));
@@ -64,7 +68,7 @@ pub fn draw_first_scene() {
     let mut right_sphere = Sphere::new();
     right_sphere.transform = translation(1.5, 0.5, -0.5) * scaling(0.5, 0.5, 0.5);
     let mut material = Material::new();
-    material.color = Color::from_hex("C3F4EE");
+    material.color = Color::from_hex("56D8CD");
     material.diffuse = Float(0.7);
     material.specular = Float(0.3);
     right_sphere.material = material;
@@ -73,7 +77,7 @@ pub fn draw_first_scene() {
     let mut left_sphere = Sphere::new();
     left_sphere.transform = translation(-1.5, 0.33, -0.75) * scaling(0.33, 0.33, 0.33);
     let mut material = Material::new();
-    material.color = Color::from_hex("F4EE70");
+    material.color = Color::from_hex("6F2DBD");
     material.diffuse = Float(0.7);
     material.specular = Float(0.3);
     left_sphere.material = material;
