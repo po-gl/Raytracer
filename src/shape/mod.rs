@@ -12,6 +12,7 @@ use std::fmt::{Debug, Formatter, Error};
 use crate::material::Material;
 
 pub mod sphere;
+pub mod test_shape;
 
 
 lazy_static! {
@@ -62,5 +63,40 @@ impl Debug for Box<dyn Shape> {
 impl Clone for Box<dyn Shape> {
     fn clone(&self) -> Self {
         self.shape_clone()
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shape::test_shape::TestShape;
+    use crate::transformation;
+    use crate::float::Float;
+
+    #[test]
+    fn shape_creation() {
+        let s = TestShape::new();
+        assert_eq!(s.transform, Matrix4::identity());
+
+        let s = TestShape::new();
+        let m = s.material;
+        assert_eq!(s.material, m);
+    }
+
+    #[test]
+    fn shape_transform() {
+        let mut s = TestShape::new();
+        s.set_transform(transformation::translation(2.0, 3.0, 4.0));
+        assert_eq!(s.transform, transformation::translation(2.0, 3.0, 4.0));
+    }
+
+    #[test]
+    fn shape_material() {
+        let mut m = Material::new();
+        m.ambient = Float(1.0);
+        let mut s = TestShape::new();
+        s.material = m;
+        assert_eq!(s.material, m);
     }
 }
