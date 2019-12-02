@@ -55,6 +55,10 @@ fn main() {
             println!("Running Example \"{}\"", example);
             examples::draw_first_scene()
         },
+        "draw-scene-on-a-plane" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_scene_on_a_plane()
+        },
         _ => println!("No valid argument.")
     }
 }
