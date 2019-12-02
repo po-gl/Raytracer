@@ -12,6 +12,7 @@ pub struct Material {
     pub diffuse: Float,
     pub specular: Float,
     pub shininess: Float,
+    pub reflective: Float,
     pub pattern: Option<Box<dyn Pattern>>,
 }
 
@@ -22,6 +23,7 @@ impl Material {
                   diffuse: Float(0.9),
                   specular: Float(0.9),
                   shininess: Float(200.0),
+                  reflective: Float(0.0),
                   pattern: None}
     }
 
