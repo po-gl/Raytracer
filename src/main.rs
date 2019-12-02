@@ -64,6 +64,10 @@ fn main() {
             println!("Running Example \"{}\"", example);
             examples::draw_patterned_scene();
         },
+        "draw-blended-patterned-scene" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_blended_patterned_scene();
+        },
         _ => println!("No valid argument.")
     }
 }
