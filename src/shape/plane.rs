@@ -69,13 +69,16 @@ impl Shape for Plane {
     }
 
     fn intersects(&self, ray: &Ray) -> Vec<Intersection<Box<dyn Shape>>> {
+        // Transform the ray
+        let t_ray = ray.transform(&self.transform.inverse());
+
         // If the ray is parallel with the plane (including coplanar)
         // return an empty vec
-        if ray.direction.y == Float(0.0) {
+        if t_ray.direction.y == Float(0.0) {
             return vec![]
         }
 
-        let t = (ray.origin.y * -1.0) / ray.direction.y;
+        let t = (t_ray.origin.y * -1.0) / t_ray.direction.y;
         return vec![Intersection::new(t.value(), Box::new(self.clone()))]
     }
 
