@@ -16,6 +16,7 @@ pub mod ray;
 pub mod intersection;
 pub mod color;
 pub mod material;
+pub mod pattern;
 pub mod shape;
 pub mod light;
 pub mod world;
