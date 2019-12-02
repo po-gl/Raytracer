@@ -50,9 +50,9 @@ impl Pattern for StripePattern {
     fn pattern_at(&self, point: &Tuple) -> Color {
         // Only x effects the stripe pattern
         if Float(point.x.value().floor() % 2.0) == Float(0.0) {
-            Color::white()
+            self.a
         } else {
-            Color::black()
+            self.b
         }
     }
 }
