@@ -5,7 +5,6 @@ use crate::color::Color;
 use crate::tuple::Tuple;
 use crate::float::Float;
 use crate::matrix::Matrix4;
-use crate::shape::Shape;
 use crate::pattern::Pattern;
 use std::fmt::{Formatter, Error};
 use std::any::Any;
@@ -48,19 +47,13 @@ impl Pattern for StripePattern {
         self.transform = transform;
     }
 
-    fn stripe_at(&self, point: &Tuple) -> Color {
+    fn pattern_at(&self, point: &Tuple) -> Color {
         // Only x effects the stripe pattern
         if Float(point.x.value().floor() % 2.0) == Float(0.0) {
             Color::white()
         } else {
             Color::black()
         }
-    }
-
-    fn stripe_at_object(&self, object: Box<dyn Shape>, world_point: &Tuple) -> Color {
-        let object_point = object.transform().inverse() * world_point;
-        let pattern_point = self.transform.inverse() * object_point;
-        self.stripe_at(&pattern_point)
     }
 }
 
@@ -84,24 +77,24 @@ mod tests {
     fn pattern_stripe_at() {
         // A stripe pattern is constant in y
         let pattern = StripePattern::new(Color::white(), Color::black());
-        assert_eq!(pattern.stripe_at(&point(0.0, 0.0, 0.0)), Color::white());
-        assert_eq!(pattern.stripe_at(&point(0.0, 1.0, 0.0)), Color::white());
-        assert_eq!(pattern.stripe_at(&point(0.0, 2.0, 0.0)), Color::white());
+        assert_eq!(pattern.pattern_at(&point(0.0, 0.0, 0.0)), Color::white());
+        assert_eq!(pattern.pattern_at(&point(0.0, 1.0, 0.0)), Color::white());
+        assert_eq!(pattern.pattern_at(&point(0.0, 2.0, 0.0)), Color::white());
 
         // A stripe pattern is constant in z
         let pattern = StripePattern::new(Color::white(), Color::black());
-        assert_eq!(pattern.stripe_at(&point(0.0, 0.0, 0.0)), Color::white());
-        assert_eq!(pattern.stripe_at(&point(0.0, 0.0, 1.0)), Color::white());
-        assert_eq!(pattern.stripe_at(&point(0.0, 0.0, 2.0)), Color::white());
+        assert_eq!(pattern.pattern_at(&point(0.0, 0.0, 0.0)), Color::white());
+        assert_eq!(pattern.pattern_at(&point(0.0, 0.0, 1.0)), Color::white());
+        assert_eq!(pattern.pattern_at(&point(0.0, 0.0, 2.0)), Color::white());
 
         // A stripe pattern alternates in x
         let pattern = StripePattern::new(Color::white(), Color::black());
-        assert_eq!(pattern.stripe_at(&point(0.0, 0.0, 0.0)), Color::white());
-        assert_eq!(pattern.stripe_at(&point(0.9, 0.0, 0.0)), Color::white());
-        assert_eq!(pattern.stripe_at(&point(1.0, 0.0, 0.0)), Color::black());
-        assert_eq!(pattern.stripe_at(&point(-0.1, 0.0, 0.0)), Color::black());
-        assert_eq!(pattern.stripe_at(&point(-1.0, 0.0, 0.0)), Color::black());
-        assert_eq!(pattern.stripe_at(&point(-1.1, 0.0, 0.0)), Color::white());
+        assert_eq!(pattern.pattern_at(&point(0.0, 0.0, 0.0)), Color::white());
+        assert_eq!(pattern.pattern_at(&point(0.9, 0.0, 0.0)), Color::white());
+        assert_eq!(pattern.pattern_at(&point(1.0, 0.0, 0.0)), Color::black());
+        assert_eq!(pattern.pattern_at(&point(-0.1, 0.0, 0.0)), Color::black());
+        assert_eq!(pattern.pattern_at(&point(-1.0, 0.0, 0.0)), Color::black());
+        assert_eq!(pattern.pattern_at(&point(-1.1, 0.0, 0.0)), Color::white());
     }
 
     #[test]
@@ -110,14 +103,14 @@ mod tests {
         let mut object = Sphere::new();
         object.set_transform(scaling(2.0, 2.0, 2.0));
         let pattern = StripePattern::new(Color::white(), Color::black());
-        let c = pattern.stripe_at_object(Box::new(object), &point(1.5, 0.0, 0.0));
+        let c = pattern.pattern_at_object(Box::new(object), &point(1.5, 0.0, 0.0));
         assert_eq!(c, Color::white());
 
         // Transform pattern
         let object = Sphere::new();
         let mut pattern = StripePattern::new(Color::white(), Color::black());
         pattern.set_transform(scaling(2.0, 2.0, 2.0));
-        let c = pattern.stripe_at_object(Box::new(object), &point(1.5, 0.0, 0.0));
+        let c = pattern.pattern_at_object(Box::new(object), &point(1.5, 0.0, 0.0));
         assert_eq!(c, Color::white());
 
         // Both object and pattern transforms
@@ -125,7 +118,7 @@ mod tests {
         object.set_transform(scaling(2.0, 2.0, 2.0));
         let mut pattern = StripePattern::new(Color::white(), Color::black());
         pattern.set_transform(translation(0.5, 0.0, 0.0));
-        let c = pattern.stripe_at_object(Box::new(object), &point(2.5, 0.0, 0.0));
+        let c = pattern.pattern_at_object(Box::new(object), &point(2.5, 0.0, 0.0));
         assert_eq!(c, Color::white());
     }
 }
