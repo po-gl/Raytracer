@@ -5,14 +5,14 @@ use crate::float::Float;
 use super::color::Color;
 use crate::pattern::Pattern;
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Material {
     pub color: Color,
     pub ambient: Float,
     pub diffuse: Float,
     pub specular: Float,
     pub shininess: Float,
-    pub pattern: Option<Pattern>,
+    pub pattern: Option<Box<dyn Pattern>>,
 }
 
 impl Material {
@@ -25,7 +25,7 @@ impl Material {
                   pattern: None}
     }
 
-    pub fn set_pattern(&mut self, pattern: Pattern) {
+    pub fn set_pattern(&mut self, pattern: Box<dyn Pattern>) {
         self.pattern = Some(pattern)
     }
 }
@@ -37,6 +37,7 @@ mod tests {
     use crate::tuple::{vector, point};
     use crate::light::{Light, lighting};
     use crate::shape::sphere::Sphere;
+    use crate::pattern::stripe_pattern::StripePattern;
 
     #[test]
     fn material_creation() {
@@ -51,7 +52,7 @@ mod tests {
     #[test]
     fn material_pattern() {
         let mut m = Material::new();
-        m.pattern = Some(Pattern::stripe_pattern(Color::white(), Color::black()));
+        m.pattern = Some(Box::new(StripePattern::new(Color::white(), Color::black())));
         m.ambient = Float(1.0);
         m.diffuse = Float(0.0);
         m.specular = Float(0.0);
@@ -60,8 +61,8 @@ mod tests {
         let eyev = vector(0.0, 0.0, -1.0);
         let normalv = vector(0.0, 0.0, -1.0);
         let light = Light::point_light(&point(0.0, 0.0, -10.0), &Color::white());
-        let c1 = lighting(&m, Some(Box::new(object)), &light, &point(0.9, 0.0, 0.0), &eyev, &normalv, false);
-        let c2 = lighting(&m, Some(Box::new(object)), &light, &point(1.1, 0.0, 0.0), &eyev, &normalv, false);
+        let c1 = lighting(&m, Some(Box::new(object.clone())), &light, &point(0.9, 0.0, 0.0), &eyev, &normalv, false);
+        let c2 = lighting(&m, Some(Box::new(object.clone())), &light, &point(1.1, 0.0, 0.0), &eyev, &normalv, false);
         assert_eq!(c1, Color::white());
         assert_eq!(c2, Color::black());
     }

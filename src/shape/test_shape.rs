@@ -11,7 +11,7 @@ use crate::ray::Ray;
 use crate::intersection::Intersection;
 use crate::tuple::{Tuple, vector};
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct TestShape {
     pub id: i32,
     pub transform: Matrix4,
@@ -44,7 +44,7 @@ impl Shape for TestShape {
     }
 
     fn shape_clone(&self) -> Box<dyn Shape> {
-        Box::new(*self)
+        Box::new(self.clone())
     }
 
     fn id(&self) -> i32 {
@@ -60,7 +60,7 @@ impl Shape for TestShape {
     }
 
     fn material(&self) -> Material {
-        self.material
+        self.material.clone()
     }
 
     fn set_material(&mut self, material: Material) {

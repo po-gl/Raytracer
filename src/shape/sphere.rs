@@ -14,7 +14,7 @@ use std::any::Any;
 use std::fmt::{Formatter, Error};
 
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Sphere {
     pub id: i32,
     pub transform: Matrix4,
@@ -47,7 +47,7 @@ impl Shape for Sphere {
     }
 
     fn shape_clone(&self) -> Box<dyn Shape> {
-        Box::new(*self)
+        Box::new(self.clone())
     }
 
     fn id(&self) -> i32 {
@@ -63,7 +63,7 @@ impl Shape for Sphere {
     }
 
     fn material(&self) -> Material {
-        self.material
+        self.material.clone()
     }
 
     fn set_material(&mut self, material: Material) {
@@ -83,12 +83,12 @@ impl Shape for Sphere {
         let discriminant = b * b - 4.0 * a * c;
 
         if discriminant < 0.0 {
-            return vec![Intersection::new(0.0, Box::new(*self)); 0]
+            return vec![Intersection::new(0.0, Box::new(self.clone())); 0]
         } else {
             let t1 = (-b - discriminant.sqrt()) / (2.0 * a);
             let t2 = (-b + discriminant.sqrt()) / (2.0 * a);
-            return vec![Intersection::new(t1, Box::new(*self)),
-                        Intersection::new(t2, Box::new(*self))];
+            return vec![Intersection::new(t1, Box::new(self.clone())),
+                        Intersection::new(t2, Box::new(self.clone()))];
         }
     }
 
@@ -231,7 +231,7 @@ mod tests {
         let mut s = Sphere::new();
         let mut m = Material::new();
         m.ambient = Float(1.0);
-        s.material = m;
+        s.material = m.clone();
         assert_eq!(s.material, m);
     }
 }

@@ -30,9 +30,9 @@ pub fn lighting(material: &Material,
 
     let color: Color;
     if object != None && material.pattern != None {
-        color = material.pattern.unwrap().stripe_at_object(object.unwrap(), point);
+        color = material.pattern.clone().unwrap().stripe_at_object(object.unwrap(), point);
     } else {
-        color = material.color;
+        color = material.color.clone();
     }
 
     // Combine surface color with the light's color

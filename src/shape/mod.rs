@@ -81,7 +81,7 @@ mod tests {
         assert_eq!(s.transform, Matrix4::identity());
 
         let s = TestShape::new();
-        let m = s.material;
+        let m = s.material.clone();
         assert_eq!(s.material, m);
     }
 
@@ -97,7 +97,7 @@ mod tests {
         let mut m = Material::new();
         m.ambient = Float(1.0);
         let mut s = TestShape::new();
-        s.material = m;
+        s.material = m.clone();
         assert_eq!(s.material, m);
     }
 }

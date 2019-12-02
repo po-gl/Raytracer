@@ -20,7 +20,7 @@ use crate::world::World;
 use crate::camera::Camera;
 use crate::{file, transformation};
 use crate::shape::plane::Plane;
-use crate::pattern::Pattern;
+use crate::pattern::stripe_pattern::StripePattern;
 
 
 pub fn draw_patterned_scene() {
@@ -35,7 +35,7 @@ pub fn draw_patterned_scene() {
     let mut floor = Plane::new();
     floor.transform = scaling(10.0, 0.01, 10.0);
     let mut material = Material::new();
-    material.set_pattern(Pattern::stripe_pattern(Color::white(), Color::black()));
+    material.set_pattern(Box::new(StripePattern::new(Color::white(), Color::black())));
     material.color = Color::from_hex("FFE2BA");
     material.specular = Float(0.0);
     floor.material = material;
@@ -44,7 +44,7 @@ pub fn draw_patterned_scene() {
     let mut middle_sphere = Sphere::new();
     middle_sphere.transform = translation(-0.5, 1.0, 0.5);
     let mut material = Material::new();
-    material.set_pattern(Pattern::stripe_pattern(Color::white(), Color::black()));
+    material.set_pattern(Box::new(StripePattern::new(Color::white(), Color::black())));
     material.color = Color::from_hex("7AC16C");
     material.diffuse = Float(0.8);
     material.specular = Float(0.7);

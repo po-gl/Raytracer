@@ -12,7 +12,7 @@ use crate::intersection::Intersection;
 use crate::tuple::{Tuple, vector};
 use crate::float::Float;
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Plane {
     pub id: i32,
     pub transform: Matrix4,
@@ -45,7 +45,7 @@ impl Shape for Plane {
     }
 
     fn shape_clone(&self) -> Box<dyn Shape> {
-        Box::new(*self)
+        Box::new(self.clone())
     }
 
     fn id(&self) -> i32 {
@@ -61,7 +61,7 @@ impl Shape for Plane {
     }
 
     fn material(&self) -> Material {
-        self.material
+        self.material.clone()
     }
 
     fn set_material(&mut self, material: Material) {
@@ -76,7 +76,7 @@ impl Shape for Plane {
         }
 
         let t = (ray.origin.y * -1.0) / ray.direction.y;
-        return vec![Intersection::new(t.value(), Box::new(*self))]
+        return vec![Intersection::new(t.value(), Box::new(self.clone()))]
     }
 
     fn normal_at(&self, _world_point: &Tuple) -> Tuple {
