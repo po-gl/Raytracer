@@ -23,7 +23,18 @@ impl Color {
         let b = i64::from_str_radix(&hex[4..6], 16).unwrap() as f64 / 255.0;
         Color {red: Float(r), green: Float(g), blue: Float(b)}
     }
+
+    // Common colors
+
+    pub fn black() -> Color {
+        Color::new(0.0, 0.0, 0.0)
+    }
+
+    pub fn white() -> Color {
+        Color::new(1.0, 1.0, 1.0)
+    }
 }
+
 
 
 // Addition
