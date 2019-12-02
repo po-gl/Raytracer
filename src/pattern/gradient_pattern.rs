@@ -1,5 +1,5 @@
 /// # Gradient Patterns
-/// `gradient_pattern` is a module to test patterns
+/// `gradient_pattern` is a module to represent gradient patterns
 
 use crate::color::Color;
 use crate::tuple::Tuple;
