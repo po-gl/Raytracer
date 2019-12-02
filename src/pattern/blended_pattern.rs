@@ -1,5 +1,5 @@
-/// # Checker Patterns
-/// `checker_pattern` is a module to represent a checker board pattern
+/// # Blended Patterns
+/// `blended_patterns` is a module to represent a blending 2 patterns
 
 use crate::color::Color;
 use crate::tuple::Tuple;
