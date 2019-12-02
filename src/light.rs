@@ -25,8 +25,16 @@ pub fn lighting(material: &Material,
                 eye_v: &Tuple,
                 normal_v: &Tuple,
                 in_shadow: bool) -> Color {
+
+    let color: Color;
+    if material.pattern != None {
+        color = material.pattern.unwrap().stripe_at(point);
+    } else {
+        color = material.color;
+    }
+
     // Combine surface color with the light's color
-    let effective_color = material.color * light_source.intensity;
+    let effective_color = color * light_source.intensity;
 
     // Find the direction to the light source
     let light_v = (light_source.position - point).normalize();

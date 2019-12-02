@@ -3,6 +3,7 @@
 
 use crate::float::Float;
 use super::color::Color;
+use crate::pattern::Pattern;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Material {
@@ -11,6 +12,7 @@ pub struct Material {
     pub diffuse: Float,
     pub specular: Float,
     pub shininess: Float,
+    pub pattern: Option<Pattern>,
 }
 
 impl Material {
@@ -19,7 +21,12 @@ impl Material {
                   ambient: Float(0.1),
                   diffuse: Float(0.9),
                   specular: Float(0.9),
-                  shininess: Float(200.0)}
+                  shininess: Float(200.0),
+                  pattern: None}
+    }
+
+    pub fn set_pattern(&mut self, pattern: Pattern) {
+        self.pattern = Some(pattern)
     }
 }
 
@@ -27,6 +34,8 @@ impl Material {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tuple::{vector, point};
+    use crate::light::{Light, lighting};
 
     #[test]
     fn material_creation() {
@@ -36,5 +45,22 @@ mod tests {
         assert_eq!(m.diffuse, 0.9);
         assert_eq!(m.specular, 0.9);
         assert_eq!(m.shininess, 200.0);
+    }
+
+    #[test]
+    fn material_pattern() {
+        let mut m = Material::new();
+        m.pattern = Some(Pattern::stripe_pattern(Color::white(), Color::black()));
+        m.ambient = Float(1.0);
+        m.diffuse = Float(0.0);
+        m.specular = Float(0.0);
+
+        let eyev = vector(0.0, 0.0, -1.0);
+        let normalv = vector(0.0, 0.0, -1.0);
+        let light = Light::point_light(&point(0.0, 0.0, -10.0), &Color::white());
+        let c1 = lighting(&m, &light, &point(0.9, 0.0, 0.0), &eyev, &normalv, false);
+        let c2 = lighting(&m, &light, &point(1.1, 0.0, 0.0), &eyev, &normalv, false);
+        assert_eq!(c1, Color::white());
+        assert_eq!(c2, Color::black());
     }
 }

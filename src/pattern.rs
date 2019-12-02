@@ -20,7 +20,7 @@ impl Pattern {
         Pattern {a: color_a, b: color_b}
     }
 
-    pub fn stripe_at(&self, point: Tuple) -> Color {
+    pub fn stripe_at(&self, point: &Tuple) -> Color {
         // Only x effects the stripe pattern
         if Float(point.x.value().floor() % 2.0) == Float(0.0) {
             Color::white()
@@ -47,23 +47,23 @@ mod tests {
     fn pattern_stripe_at() {
         // A stripe pattern is constant in y
         let pattern = Pattern::stripe_pattern(Color::white(), Color::black());
-        assert_eq!(pattern.stripe_at(point(0.0, 0.0, 0.0)), Color::white());
-        assert_eq!(pattern.stripe_at(point(0.0, 1.0, 0.0)), Color::white());
-        assert_eq!(pattern.stripe_at(point(0.0, 2.0, 0.0)), Color::white());
+        assert_eq!(pattern.stripe_at(&point(0.0, 0.0, 0.0)), Color::white());
+        assert_eq!(pattern.stripe_at(&point(0.0, 1.0, 0.0)), Color::white());
+        assert_eq!(pattern.stripe_at(&point(0.0, 2.0, 0.0)), Color::white());
 
         // A stripe pattern is constant in z
         let pattern = Pattern::stripe_pattern(Color::white(), Color::black());
-        assert_eq!(pattern.stripe_at(point(0.0, 0.0, 0.0)), Color::white());
-        assert_eq!(pattern.stripe_at(point(0.0, 0.0, 1.0)), Color::white());
-        assert_eq!(pattern.stripe_at(point(0.0, 0.0, 2.0)), Color::white());
+        assert_eq!(pattern.stripe_at(&point(0.0, 0.0, 0.0)), Color::white());
+        assert_eq!(pattern.stripe_at(&point(0.0, 0.0, 1.0)), Color::white());
+        assert_eq!(pattern.stripe_at(&point(0.0, 0.0, 2.0)), Color::white());
 
         // A stripe pattern alternates in x
         let pattern = Pattern::stripe_pattern(Color::white(), Color::black());
-        assert_eq!(pattern.stripe_at(point(0.0, 0.0, 0.0)), Color::white());
-        assert_eq!(pattern.stripe_at(point(0.9, 0.0, 0.0)), Color::white());
-        assert_eq!(pattern.stripe_at(point(1.0, 0.0, 0.0)), Color::black());
-        assert_eq!(pattern.stripe_at(point(-0.1, 0.0, 0.0)), Color::black());
-        assert_eq!(pattern.stripe_at(point(-1.0, 0.0, 0.0)), Color::black());
-        assert_eq!(pattern.stripe_at(point(-1.1, 0.0, 0.0)), Color::white());
+        assert_eq!(pattern.stripe_at(&point(0.0, 0.0, 0.0)), Color::white());
+        assert_eq!(pattern.stripe_at(&point(0.9, 0.0, 0.0)), Color::white());
+        assert_eq!(pattern.stripe_at(&point(1.0, 0.0, 0.0)), Color::black());
+        assert_eq!(pattern.stripe_at(&point(-0.1, 0.0, 0.0)), Color::black());
+        assert_eq!(pattern.stripe_at(&point(-1.0, 0.0, 0.0)), Color::black());
+        assert_eq!(pattern.stripe_at(&point(-1.1, 0.0, 0.0)), Color::white());
     }
 }
