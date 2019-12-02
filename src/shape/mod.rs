@@ -11,8 +11,9 @@ use std::any::Any;
 use std::fmt::{Debug, Formatter, Error};
 use crate::material::Material;
 
-pub mod sphere;
 pub mod test_shape;
+pub mod sphere;
+pub mod plane;
 
 
 lazy_static! {
