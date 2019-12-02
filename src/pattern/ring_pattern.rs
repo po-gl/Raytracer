@@ -64,7 +64,7 @@ mod tests {
     use crate::tuple::point;
 
     #[test]
-    fn gradient_pattern() {
+    fn ring_pattern() {
         let pattern = RingPattern::new(Color::white(), Color::black());
         assert_eq!(pattern.pattern_at(&point(0.0, 0.0, 0.0)), Color::white());
         assert_eq!(pattern.pattern_at(&point(1.0, 0.0, 0.0)), Color::black());
