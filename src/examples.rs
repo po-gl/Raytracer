@@ -252,8 +252,9 @@ pub fn draw_shaded_circle() {
                 let point = &ray.position(hit.as_ref().unwrap().t.value());
                 let normal = hit.as_ref().unwrap().object.normal_at(point);
                 let eye = -&ray.direction;
+                let object = hit.as_ref().unwrap().object.clone();
 
-                let color = light::lighting(&hit.as_ref().unwrap().object.material(), &light, point, &eye, &normal, false);
+                let color = light::lighting(&object.material(), Some(object), &light, point, &eye, &normal, false);
                 canvas.write_pixel(x, y, &color);
             }
         }

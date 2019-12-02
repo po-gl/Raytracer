@@ -6,6 +6,7 @@ use super::color::Color;
 use crate::material::Material;
 use crate::tuple;
 use crate::float::Float;
+use crate::shape::Shape;
 
 #[derive(Debug, PartialEq)]
 pub struct Light {
@@ -20,6 +21,7 @@ impl Light {
 }
 
 pub fn lighting(material: &Material,
+                object: Option<Box<dyn Shape>>,
                 light_source: &Light,
                 point: &Tuple,
                 eye_v: &Tuple,
@@ -28,7 +30,11 @@ pub fn lighting(material: &Material,
 
     let color: Color;
     if material.pattern != None {
-        color = material.pattern.unwrap().stripe_at(point);
+        if object != None {
+            color = material.pattern.unwrap().stripe_at_object(object.unwrap(), point);
+        } else {
+            color = material.pattern.unwrap().stripe_at(point);
+        }
     } else {
         color = material.color;
     }
@@ -100,35 +106,35 @@ mod tests {
         let eye_v = vector(0.0, 0.0, -1.0);
         let normal_v = vector(0.0, 0.0, -1.0);
         let light = Light::point_light(&point(0.0, 0.0, -10.0), &Color::new(1.0, 1.0, 1.0));
-        let result = lighting(&m, &light, &position, &eye_v, &normal_v, in_shadow);
+        let result = lighting(&m, None, &light, &position, &eye_v, &normal_v, in_shadow);
         assert_eq!(result, Color::new(1.9, 1.9, 1.9));
 
         // Lighting with the eye between the light and surface, eye offset 45 degrees
         let eye_v = vector(0.0, 2.0f64.sqrt()/2.0, -2.0f64.sqrt()/2.0);
         let normal_v = vector(0.0, 0.0, -1.0);
         let light = Light::point_light(&point(0.0, 0.0, -10.0), &Color::new(1.0, 1.0, 1.0));
-        let result = lighting(&m, &light, &position, &eye_v, &normal_v, in_shadow);
+        let result = lighting(&m, None, &light, &position, &eye_v, &normal_v, in_shadow);
         assert_eq!(result, Color::new(1.0, 1.0, 1.0));
 
         // Lighting with eye opposite surface, light offset 45 degrees
         let eye_v = vector(0.0, 0.0, -1.0);
         let normal_v = vector(0.0, 0.0, -1.0);
         let light = Light::point_light(&point(0.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0));
-        let result = lighting(&m, &light, &position, &eye_v, &normal_v, in_shadow);
+        let result = lighting(&m, None, &light, &position, &eye_v, &normal_v, in_shadow);
         assert_eq!(result, Color::new(0.7364, 0.7364, 0.7364));
 
         // Lighting with eye in the path of the reflection vector
         let eye_v = vector(0.0, -2.0f64.sqrt()/2.0, -2.0f64.sqrt()/2.0);
         let normal_v = vector(0.0, 0.0, -1.0);
         let light = Light::point_light(&point(0.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0));
-        let result = lighting(&m, &light, &position, &eye_v, &normal_v, in_shadow);
+        let result = lighting(&m, None, &light, &position, &eye_v, &normal_v, in_shadow);
         assert_eq!(result, Color::new(1.6364, 1.6364, 1.6364));
 
         // Lighting with the light behind the surface
         let eye_v = vector(0.0, 0.0, -1.0);
         let normal_v = vector(0.0, 0.0, -1.0);
         let light = Light::point_light(&point(0.0, 0.0, 10.0), &Color::new(1.0, 1.0, 1.0));
-        let result = lighting(&m, &light, &position, &eye_v, &normal_v, in_shadow);
+        let result = lighting(&m, None, &light, &position, &eye_v, &normal_v, in_shadow);
         assert_eq!(result, Color::new(0.1, 0.1, 0.1));
     }
 
@@ -140,7 +146,7 @@ mod tests {
         let normal_v = vector(0.0, 0.0, -1.0);
         let light = Light::point_light(&point(0.0, 0.0, -10.0), &Color::new(1.0, 1.0, 1.0));
         let in_shadow = true;
-        let result = lighting(&m, &light, &position, &eye_v, &normal_v, in_shadow);
+        let result = lighting(&m, None, &light, &position, &eye_v, &normal_v, in_shadow);
         assert_eq!(result, Color::new(0.1, 0.1, 0.1));
     }
 }

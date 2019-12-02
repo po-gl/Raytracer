@@ -58,7 +58,7 @@ impl World {
 
     pub fn shade_hit(&self, comps: PrecomputedData<Box<dyn Shape>>) -> Color {
         // One light implementation for now
-        light::lighting(&comps.object.material(), &self.lights[0], &comps.point, &comps.eyev, &comps.normalv, self.is_shadowed(comps.over_point))
+        light::lighting(&comps.object.material(), Some(comps.object), &self.lights[0], &comps.point, &comps.eyev, &comps.normalv, self.is_shadowed(comps.over_point))
     }
 
     pub fn color_at(&self, ray: &Ray) -> Color {

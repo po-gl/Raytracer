@@ -58,8 +58,8 @@ mod tests {
         let eyev = vector(0.0, 0.0, -1.0);
         let normalv = vector(0.0, 0.0, -1.0);
         let light = Light::point_light(&point(0.0, 0.0, -10.0), &Color::white());
-        let c1 = lighting(&m, &light, &point(0.9, 0.0, 0.0), &eyev, &normalv, false);
-        let c2 = lighting(&m, &light, &point(1.1, 0.0, 0.0), &eyev, &normalv, false);
+        let c1 = lighting(&m, None, &light, &point(0.9, 0.0, 0.0), &eyev, &normalv, false);
+        let c2 = lighting(&m, None, &light, &point(1.1, 0.0, 0.0), &eyev, &normalv, false);
         assert_eq!(c1, Color::white());
         assert_eq!(c2, Color::black());
     }
