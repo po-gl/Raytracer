@@ -14,6 +14,7 @@ pub mod gradient_pattern;
 pub mod ring_pattern;
 pub mod checker_pattern;
 pub mod blended_pattern;
+pub mod perturbed_pattern;
 
 
 pub trait Pattern: Any {
