@@ -29,12 +29,8 @@ pub fn lighting(material: &Material,
                 in_shadow: bool) -> Color {
 
     let color: Color;
-    if material.pattern != None {
-        if object != None {
-            color = material.pattern.unwrap().stripe_at_object(object.unwrap(), point);
-        } else {
-            color = material.pattern.unwrap().stripe_at(point);
-        }
+    if object != None && material.pattern != None {
+        color = material.pattern.unwrap().stripe_at_object(object.unwrap(), point);
     } else {
         color = material.color;
     }

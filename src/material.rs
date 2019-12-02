@@ -36,6 +36,7 @@ mod tests {
     use super::*;
     use crate::tuple::{vector, point};
     use crate::light::{Light, lighting};
+    use crate::shape::sphere::Sphere;
 
     #[test]
     fn material_creation() {
@@ -55,11 +56,12 @@ mod tests {
         m.diffuse = Float(0.0);
         m.specular = Float(0.0);
 
+        let object = Sphere::new();
         let eyev = vector(0.0, 0.0, -1.0);
         let normalv = vector(0.0, 0.0, -1.0);
         let light = Light::point_light(&point(0.0, 0.0, -10.0), &Color::white());
-        let c1 = lighting(&m, None, &light, &point(0.9, 0.0, 0.0), &eyev, &normalv, false);
-        let c2 = lighting(&m, None, &light, &point(1.1, 0.0, 0.0), &eyev, &normalv, false);
+        let c1 = lighting(&m, Some(Box::new(object)), &light, &point(0.9, 0.0, 0.0), &eyev, &normalv, false);
+        let c2 = lighting(&m, Some(Box::new(object)), &light, &point(1.1, 0.0, 0.0), &eyev, &normalv, false);
         assert_eq!(c1, Color::white());
         assert_eq!(c2, Color::black());
     }
