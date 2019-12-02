@@ -48,7 +48,7 @@ impl Pattern for CheckerPattern {
     }
 
     fn pattern_at(&self, point: &Tuple) -> Color {
-        // Only x effects the stripe pattern
+        // Similar to stripe pattern
         if Float((point.x.value().abs().floor() + point.y.value().abs().floor() + point.z.value().abs().floor()) % 2.0) == Float(0.0) {
             self.a
         } else {
