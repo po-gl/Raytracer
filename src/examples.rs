@@ -21,12 +21,15 @@ use crate::camera::Camera;
 use crate::{file, transformation};
 use crate::shape::plane::Plane;
 use crate::pattern::stripe_pattern::StripePattern;
+use crate::pattern::ring_pattern::RingPattern;
+use crate::pattern::Pattern;
+use crate::pattern::gradient_pattern::GradientPattern;
 
 
 pub fn draw_patterned_scene() {
     // Options
-    let canvas_width = 400;
-    let canvas_height = 400;
+    let canvas_width = 500;
+    let canvas_height = 500;
     let fov = PI/3.0;
 
     // Construct world
@@ -35,7 +38,9 @@ pub fn draw_patterned_scene() {
     let mut floor = Plane::new();
     floor.transform = scaling(10.0, 0.01, 10.0);
     let mut material = Material::new();
-    material.set_pattern(Box::new(StripePattern::new(Color::white(), Color::black())));
+    let mut pattern = RingPattern::new(Color::from_hex("EE2E31"), Color::black());
+    pattern.set_transform(transformation::scaling(0.1, 0.1, 0.1));
+    material.set_pattern(Box::new(pattern));
     material.color = Color::from_hex("FFE2BA");
     material.specular = Float(0.0);
     floor.material = material;
@@ -44,7 +49,9 @@ pub fn draw_patterned_scene() {
     let mut middle_sphere = Sphere::new();
     middle_sphere.transform = translation(-0.5, 1.0, 0.5);
     let mut material = Material::new();
-    material.set_pattern(Box::new(StripePattern::new(Color::white(), Color::black())));
+    let mut pattern = GradientPattern::new(Color::from_hex("679289"), Color::from_hex("F4C095"));
+    pattern.set_transform(transformation::scaling(2.0, 2.0, 2.0) * transformation::rotation_y(PI/2.0));
+    material.set_pattern(Box::new(pattern));
     material.color = Color::from_hex("7AC16C");
     material.diffuse = Float(0.8);
     material.specular = Float(0.7);
@@ -54,6 +61,9 @@ pub fn draw_patterned_scene() {
     let mut right_sphere = Sphere::new();
     right_sphere.transform = translation(1.5, 0.5, -0.5) * scaling(0.5, 0.5, 0.5);
     let mut material = Material::new();
+    let mut pattern = StripePattern::new(Color::white(), Color::black());
+    pattern.set_transform(transformation::scaling(0.5, 0.5, 0.5));
+    material.set_pattern(Box::new(pattern));
     material.color = Color::from_hex("56D8CD");
     material.diffuse = Float(0.7);
     material.specular = Float(0.3);
