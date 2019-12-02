@@ -20,6 +20,67 @@ use crate::world::World;
 use crate::camera::Camera;
 use crate::{file, transformation};
 use crate::shape::plane::Plane;
+use crate::pattern::Pattern;
+
+
+pub fn draw_patterned_scene() {
+    // Options
+    let canvas_width = 400;
+    let canvas_height = 400;
+    let fov = PI/3.0;
+
+    // Construct world
+    let mut world = World::new();
+
+    let mut floor = Plane::new();
+    floor.transform = scaling(10.0, 0.01, 10.0);
+    let mut material = Material::new();
+    material.set_pattern(Pattern::stripe_pattern(Color::white(), Color::black()));
+    material.color = Color::from_hex("FFE2BA");
+    material.specular = Float(0.0);
+    floor.material = material;
+    world.objects.push(Box::new(floor));
+
+    let mut middle_sphere = Sphere::new();
+    middle_sphere.transform = translation(-0.5, 1.0, 0.5);
+    let mut material = Material::new();
+    material.set_pattern(Pattern::stripe_pattern(Color::white(), Color::black()));
+    material.color = Color::from_hex("7AC16C");
+    material.diffuse = Float(0.8);
+    material.specular = Float(0.7);
+    middle_sphere.material = material;
+    world.objects.push(Box::new(middle_sphere));
+
+    let mut right_sphere = Sphere::new();
+    right_sphere.transform = translation(1.5, 0.5, -0.5) * scaling(0.5, 0.5, 0.5);
+    let mut material = Material::new();
+    material.color = Color::from_hex("56D8CD");
+    material.diffuse = Float(0.7);
+    material.specular = Float(0.3);
+    right_sphere.material = material;
+    world.objects.push(Box::new(right_sphere));
+
+    let mut left_sphere = Sphere::new();
+    left_sphere.transform = translation(-1.5, 0.33, -0.75) * scaling(0.33, 0.33, 0.33);
+    let mut material = Material::new();
+    material.color = Color::from_hex("6F2DBD");
+    material.diffuse = Float(0.7);
+    material.specular = Float(0.3);
+    left_sphere.material = material;
+    world.objects.push(Box::new(left_sphere));
+
+    let light = Light::point_light(&point(-10.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0));
+    world.lights.push(light);
+
+    // Create camera and render scene
+    let mut camera = Camera::new(canvas_width, canvas_height, fov);
+    camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
+
+    let canvas = camera.render(world);
+    file::write_to_file(canvas.to_ppm(), String::from("patterned_scene.ppm"))
+}
+
+//--------------------------------------------------
 
 pub fn draw_scene_on_a_plane() {
     // Options

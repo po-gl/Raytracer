@@ -42,23 +42,27 @@ fn main() {
         },
         "draw-clock" => {
             println!("Running Example \"{}\"", example);
-            examples::draw_clock()
+            examples::draw_clock();
         },
         "draw-circle" => {
             println!("Running Example \"{}\"", example);
-            examples::draw_circle()
+            examples::draw_circle();
         },
         "draw-shaded-circle" => {
             println!("Running Example \"{}\"", example);
-            examples::draw_shaded_circle()
+            examples::draw_shaded_circle();
         },
         "draw-first-scene" => {
             println!("Running Example \"{}\"", example);
-            examples::draw_first_scene()
+            examples::draw_first_scene();
         },
         "draw-scene-on-a-plane" => {
             println!("Running Example \"{}\"", example);
-            examples::draw_scene_on_a_plane()
+            examples::draw_scene_on_a_plane();
+        },
+        "draw-patterned-scene" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_patterned_scene();
         },
         _ => println!("No valid argument.")
     }
