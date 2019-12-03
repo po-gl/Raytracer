@@ -522,7 +522,6 @@ mod tests {
     #[test]
     fn world_schlick_shade_hit() {
         let mut w = World::default_world();
-        let r = Ray::new(point(0.0, 0.0, -3.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
         let mut p = Plane::new();
         p.material.reflective = Float(0.5); // Similar to another test minus this reflective material
         p.material.transparency = Float(0.5);
