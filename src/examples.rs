@@ -29,8 +29,8 @@ use crate::pattern::perturbed_pattern::PerturbedPattern;
 
 pub fn draw_reflected_scene() {
     // Options
-    let canvas_width = 100;
-    let canvas_height = 100;
+    let canvas_width = 1000;
+    let canvas_height = 1000;
     let fov = PI/3.0;
 
     // Construct world
@@ -65,8 +65,9 @@ pub fn draw_reflected_scene() {
     let mut right_sphere = Sphere::new();
     right_sphere.transform = translation(1.5, 0.5, -0.5) * scaling(0.5, 0.5, 0.5);
     let mut material = Material::new();
+    material.reflective = Float(0.4);
     let mut pattern = StripePattern::new(Color::white(), Color::black());
-    pattern.set_transform(transformation::scaling(0.5, 0.5, 0.5));
+    pattern.set_transform(transformation::rotation_z(-PI/12.0) * transformation::scaling(0.1, 0.1, 0.1));
     material.set_pattern(Box::new(pattern));
     material.color = Color::from_hex("56D8CD");
     material.diffuse = Float(0.7);
@@ -77,6 +78,7 @@ pub fn draw_reflected_scene() {
     let mut left_sphere = Sphere::new();
     left_sphere.transform = translation(-1.5, 0.33, -0.75) * scaling(0.33, 0.33, 0.33);
     let mut material = Material::new();
+    material.reflective = Float(0.7);
     material.color = Color::from_hex("6F2DBD");
     material.diffuse = Float(0.7);
     material.specular = Float(0.3);
