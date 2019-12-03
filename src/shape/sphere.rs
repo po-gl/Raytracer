@@ -234,4 +234,12 @@ mod tests {
         s.material = m.clone();
         assert_eq!(s.material, m);
     }
+
+    #[test]
+    fn sphere_glassy_material() {
+        let s = Sphere::new_with_material(Material::glass());
+        assert_eq!(s.transform, Matrix4::identity());
+        assert_eq!(s.material.transparency, 1.0);
+        assert_eq!(s.material.refractive_index, 1.5);
+    }
 }
