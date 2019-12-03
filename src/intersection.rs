@@ -24,6 +24,8 @@ pub struct PrecomputedData<T> {
     pub normalv: Tuple,
     pub reflectv: Tuple,
     pub inside: bool,
+    pub n1: Float, // Refraction data
+    pub n2: Float, // Refraction data
 }
 
 impl<T> Intersection<T> {
@@ -59,7 +61,13 @@ pub fn hit<T>(intersections: Vec<Intersection<T>>) -> Option<Intersection<T>> {
     }
 }
 
-pub fn prepare_computations(intersection: Intersection<Box<dyn Shape>>, ray: &Ray) -> PrecomputedData<Box<dyn Shape>> {
+pub fn prepare_computations_single_intersection(intersection: Intersection<Box<dyn Shape>>,
+                                                ray: &Ray) -> PrecomputedData<Box<dyn Shape>> {
+    prepare_computations(intersection.clone(), ray, vec![intersection])
+}
+
+pub fn prepare_computations(intersection: Intersection<Box<dyn Shape>>, ray: &Ray,
+                            intersections: Vec<Intersection<Box<dyn Shape>>>) -> PrecomputedData<Box<dyn Shape>> {
 
     let point = ray.position(intersection.t.value());
     let mut normalv = intersection.object.normal_at(&point);
@@ -73,6 +81,49 @@ pub fn prepare_computations(intersection: Intersection<Box<dyn Shape>>, ray: &Ra
 
     let reflectv = ray.direction.reflect(&normalv);
 
+    // Calculate n1 and n2 for refractions
+    let mut n1 = Float(1.0);
+    let mut n2 = Float(1.0);
+    let mut container: Vec<Box<dyn Shape>> = vec![];
+    for inter in &intersections {
+        let is_inter_hit = *inter == intersection;
+
+        // 1. If the intersection is a hit set n1
+        if is_inter_hit {
+            if container.is_empty() {
+                n1 = Float(1.0);
+            } else {
+                n1 = container.last().unwrap().material().clone().refractive_index;
+            }
+        }
+
+        // 2. remove inter.object from container if it is present
+        let mut is_object_present = false;
+        for j in 0..container.len() {
+            if inter.object == container[j].clone() {
+                container.remove(j);
+                is_object_present = true;
+                break;
+            }
+        }
+        // otherwise append it to container
+        if !is_object_present {
+            container.push(inter.object.clone());
+        }
+
+        // 3. If the intersection is a hit set n2
+        if is_inter_hit {
+            if container.is_empty() {
+                n2 = Float(1.0);
+            } else {
+                n2 = container.last().unwrap().material().clone().refractive_index;
+            }
+
+            // 4. If the intersection is a hit, end the loop
+            break;
+        }
+    }
+
     PrecomputedData {
         t: intersection.t,
         object: intersection.object,
@@ -82,6 +133,8 @@ pub fn prepare_computations(intersection: Intersection<Box<dyn Shape>>, ray: &Ra
         normalv,
         reflectv,
         inside,
+        n1,
+        n2,
     }
 }
 
@@ -93,6 +146,8 @@ mod tests {
     use crate::tuple::{point, vector};
     use crate::{FLOAT_THRESHOLD, transformation};
     use crate::shape::plane::Plane;
+    use crate::material::Material;
+    use crate::transformation::{scaling, translation};
 
     #[test]
     fn intersection_creation() {
@@ -156,7 +211,7 @@ mod tests {
         let shape: Box<dyn Shape> = Box::new(Sphere::new());
         let i = Intersection::new(4.0, shape);
         let i_clone = i.clone();
-        let comps = prepare_computations(i, &r);
+        let comps = prepare_computations_single_intersection(i, &r);
         assert_eq!(&comps.t, &i_clone.t);
 //        assert_eq!(comps.object, Box::new(Sphere::new()));
         assert_eq!(comps.point, point(0.0, 0.0, -1.0));
@@ -167,14 +222,14 @@ mod tests {
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
         let shape: Box<dyn Shape> = Box::new(Sphere::new());
         let i = Intersection::new(4.0, shape);
-        let comps = prepare_computations(i, &r);
+        let comps = prepare_computations_single_intersection(i, &r);
         assert_eq!(comps.inside, false);
 
         // If the hit occurs inside the object
         let r = Ray::new(point(0.0, 0.0, 0.0), vector(0.0, 0.0, 1.0));
         let shape: Box<dyn Shape> = Box::new(Sphere::new());
         let i = Intersection::new(4.0, shape);
-        let comps = prepare_computations(i, &r);
+        let comps = prepare_computations_single_intersection(i, &r);
         assert_eq!(comps.inside, true);
         assert_eq!(comps.normalv, vector(0.0, 0.0, -1.0)); // inverted from (0, 0, 1)
     }
@@ -186,7 +241,7 @@ mod tests {
         s1.transform = transformation::translation(0.0, 0.0, 1.0);
         let shape: Box<dyn Shape> = Box::new(s1);
         let i = Intersection::new(5.0, shape);
-        let comps = prepare_computations(i, &r);
+        let comps = prepare_computations_single_intersection(i, &r);
         assert!(comps.over_point.z < Float(-FLOAT_THRESHOLD/2.0));
         assert!(comps.point.z > comps.over_point.z);
     }
@@ -196,7 +251,49 @@ mod tests {
         let shape: Box<dyn Shape> = Box::new(Plane::new());
         let r = Ray::new(point(0.0, 1.0, -1.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
         let i = Intersection::new(2.0f64.sqrt(), shape);
-        let comps = prepare_computations(i, &r);
+        let comps = prepare_computations_single_intersection(i, &r);
         assert_eq!(comps.reflectv, vector(0.0, 2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0))
+    }
+
+    #[test]
+    fn intersection_refraction() {
+        let mut a = Sphere::new_with_material(Material::glass());
+        a.transform = scaling(2.0, 2.0, 2.0);
+        a.material.refractive_index = Float(1.5);
+        let mut b = Sphere::new_with_material(Material::glass());
+        b.transform = translation(0.0, 0.0, -0.25);
+        b.material.refractive_index = Float(2.0);
+        let mut c = Sphere::new_with_material(Material::glass());
+        c.transform = translation(0.0, 0.0, 0.25);
+        c.material.refractive_index = Float(2.5);
+
+        let shape_a: Box<dyn Shape> = Box::new(a.clone());
+        let shape_b: Box<dyn Shape> = Box::new(b.clone());
+        let shape_c: Box<dyn Shape> = Box::new(c.clone());
+
+        let r = Ray::new(point(0.0, 0.0, -4.0), vector(0.0, 0.0, 1.0));
+        let xs = vec![
+            Intersection::new(2.0, shape_a.clone()),
+            Intersection::new(2.75, shape_b.clone()),
+            Intersection::new(3.25, shape_c.clone()),
+            Intersection::new(4.75, shape_b.clone()),
+            Intersection::new(5.25, shape_c.clone()),
+            Intersection::new(6.0, shape_a.clone()),
+        ];
+
+        let n_pairs = vec![
+            (1.0, 1.5),
+            (1.5, 2.0),
+            (2.0, 2.5),
+            (2.5, 2.5),
+            (2.5, 1.5),
+            (1.5, 1.0),
+        ];
+
+        for i in 0..n_pairs.len() {
+            let comps = prepare_computations(xs[i].clone(), &r, xs.clone());
+            assert_eq!(comps.n1, Float(n_pairs[i].0));
+            assert_eq!(comps.n2, Float(n_pairs[i].1));
+        }
     }
 }

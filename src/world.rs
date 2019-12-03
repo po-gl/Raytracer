@@ -73,9 +73,9 @@ impl World {
     /// * `remaining` Remaining amount of recursions allowed
     pub fn color_at_impl(&self, ray: &Ray, remaining: i32) -> Color {
         let intersections = self.intersects(ray);
-        let hit = intersection::hit(intersections);
+        let hit = intersection::hit(intersections.clone());
         if hit == None {return Color::new(0.0, 0.0, 0.0)}  // Return black of no hits
-        let comps = intersection::prepare_computations(hit.unwrap(), ray);
+        let comps = intersection::prepare_computations(hit.unwrap(), ray, intersections);
         self.shade_hit_impl(comps, remaining)
     }
 
@@ -161,7 +161,7 @@ mod tests {
     use crate::tuple::vector;
     use crate::intersection;
     use crate::transformation::translation;
-    use crate::intersection::prepare_computations;
+    use crate::intersection::prepare_computations_single_intersection;
     use crate::shape::plane::Plane;
 
     #[test]
@@ -205,7 +205,7 @@ mod tests {
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
         let shape = w.objects[0].clone();
         let i = Intersection::new(4.0, shape);
-        let comps = intersection::prepare_computations(i, &r);
+        let comps = intersection::prepare_computations_single_intersection(i, &r);
         let c = w.shade_hit(comps);
         assert_eq!(c, Color::new(0.38066, 0.47583, 0.2855));
 
@@ -215,7 +215,7 @@ mod tests {
         let r = Ray::new(point(0.0, 0.0, 0.0), vector(0.0, 0.0, 1.0));
         let shape = w.objects[1].clone();
         let i = Intersection::new(0.5, shape);
-        let comps = intersection::prepare_computations(i, &r);
+        let comps = intersection::prepare_computations_single_intersection(i, &r);
         let c = w.shade_hit(comps);
         assert_eq!(c, Color::new(0.90498, 0.90498, 0.90498));
 
@@ -230,7 +230,7 @@ mod tests {
         let r = Ray::new(point(0.0, 0.0, 5.0), vector(0.0, 0.0, 1.0));
         let shape = w.objects[1].clone();
         let i = Intersection::new(4.0, shape);
-        let comps = intersection::prepare_computations(i, &r);
+        let comps = intersection::prepare_computations_single_intersection(i, &r);
         let c = w.shade_hit(comps);
         assert_eq!(c, Color::new(0.1, 0.1, 0.1));
     }
@@ -301,7 +301,7 @@ mod tests {
         material.ambient = Float(1.0);
         shape.set_material(material);
         let i = Intersection::new(1.0, shape);
-        let comps = prepare_computations(i, &r);
+        let comps = prepare_computations_single_intersection(i, &r);
         let color = w.reflected_color(comps);
         assert_eq!(color, Color::new(0.0, 0.0, 0.0));
 
@@ -314,7 +314,7 @@ mod tests {
         w.objects.push(shape.clone());
         let r = Ray::new(point(0.0, 0.0, -3.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
         let i = Intersection::new(2.0f64.sqrt(), shape);
-        let comps = prepare_computations(i, &r);
+        let comps = prepare_computations_single_intersection(i, &r);
         let color = w.reflected_color(comps);
         assert_eq!(color, Color::new(0.19033, 0.237915, 0.14274));
     }
@@ -330,7 +330,7 @@ mod tests {
         w.objects.push(shape.clone());
         let r = Ray::new(point(0.0, 0.0, -3.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
         let i = Intersection::new(2.0f64.sqrt(), shape);
-        let comps = prepare_computations(i, &r);
+        let comps = prepare_computations_single_intersection(i, &r);
         let color = w.shade_hit(comps);
         assert_eq!(color, Color::new(0.87675, 0.92434, 0.82917));
     }
@@ -365,7 +365,7 @@ mod tests {
         w.objects.push(shape.clone());
         let r = Ray::new(point(0.0, 0.0, -3.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
         let i = Intersection::new(2.0f64.sqrt(), shape);
-        let comps = prepare_computations(i, &r);
+        let comps = prepare_computations_single_intersection(i, &r);
         let color = w.reflected_color_impl(comps, 0);
         assert_eq!(color, Color::black());
     }
