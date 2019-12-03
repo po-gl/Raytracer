@@ -68,4 +68,11 @@ mod tests {
         assert_eq!(c1, Color::white());
         assert_eq!(c2, Color::black());
     }
+
+    #[test]
+    fn material_reflective() {
+        let m = Material::new();
+        assert_eq!(m.reflective, 0.0);
+    }
 }
+
