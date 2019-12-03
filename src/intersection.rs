@@ -22,6 +22,7 @@ pub struct PrecomputedData<T> {
     pub over_point: Tuple,
     pub eyev: Tuple,
     pub normalv: Tuple,
+    pub reflectv: Tuple,
     pub inside: bool,
 }
 
@@ -70,6 +71,8 @@ pub fn prepare_computations(intersection: Intersection<Box<dyn Shape>>, ray: &Ra
 
     let over_point = point + (normalv * FLOAT_THRESHOLD);
 
+    let reflectv = ray.direction.reflect(&normalv);
+
     PrecomputedData {
         t: intersection.t,
         object: intersection.object,
@@ -77,6 +80,7 @@ pub fn prepare_computations(intersection: Intersection<Box<dyn Shape>>, ray: &Ra
         over_point,
         eyev,
         normalv,
+        reflectv,
         inside,
     }
 }
@@ -88,6 +92,7 @@ mod tests {
     use crate::shape::sphere::Sphere;
     use crate::tuple::{point, vector};
     use crate::{FLOAT_THRESHOLD, transformation};
+    use crate::shape::plane::Plane;
 
     #[test]
     fn intersection_creation() {
@@ -184,5 +189,14 @@ mod tests {
         let comps = prepare_computations(i, &r);
         assert!(comps.over_point.z < Float(-FLOAT_THRESHOLD/2.0));
         assert!(comps.point.z > comps.over_point.z);
+    }
+
+    #[test]
+    fn intersection_reflection() {
+        let shape: Box<dyn Shape> = Box::new(Plane::new());
+        let r = Ray::new(point(0.0, 1.0, -1.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
+        let i = Intersection::new(2.0f64.sqrt(), shape);
+        let comps = prepare_computations(i, &r);
+        assert_eq!(comps.reflectv, vector(0.0, 2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0))
     }
 }

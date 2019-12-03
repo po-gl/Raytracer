@@ -1,12 +1,12 @@
 //! # Main
 //! `main` drives the program
 
-const FLOAT_THRESHOLD: f64 = 0.00001;
-
 #[macro_use] extern crate impl_ops;
 #[macro_use] extern crate lazy_static;
 
 use std::env;
+
+const FLOAT_THRESHOLD: f64 = 0.00001;
 
 pub mod float;
 pub mod tuple;
@@ -72,6 +72,11 @@ fn main() {
             println!("Running Example \"{}\"", example);
             examples::draw_perturbed_patterned_scene();
         },
+        "draw-reflected-scene" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_reflected_scene();
+        },
         _ => println!("No valid argument.")
+
     }
 }

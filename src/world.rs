@@ -12,14 +12,17 @@ use crate::tuple::{point, Tuple};
 use crate::ray::Ray;
 use crate::intersection::{Intersection, PrecomputedData};
 
+const DEFAULT_RAY_BOUNCES: i32 = 4;
+
 pub struct World {
     pub objects: Vec<Box<dyn Shape>>,
-    pub lights: Vec<Light>
+    pub lights: Vec<Light>,
+    pub max_recursion: i32,
 }
 
 impl World {
     pub fn new() -> World {
-        World {objects: vec![], lights: vec![]}
+        World {objects: vec![], lights: vec![], max_recursion: DEFAULT_RAY_BOUNCES}
     }
 
     pub fn default_world() -> World {
@@ -34,7 +37,7 @@ impl World {
         let mut sphere2 = Sphere::new();
         sphere2.set_transform(transformation::scaling(0.5, 0.5, 0.5));
 
-        World {objects: vec![Box::new(sphere1), Box::new(sphere2)], lights: vec![light]}
+        World {objects: vec![Box::new(sphere1), Box::new(sphere2)], lights: vec![light], max_recursion: DEFAULT_RAY_BOUNCES}
     }
 
     pub fn contains_object(&self, object: &Box<dyn Shape>) -> bool {
@@ -56,17 +59,74 @@ impl World {
         intersections
     }
 
-    pub fn shade_hit(&self, comps: PrecomputedData<Box<dyn Shape>>) -> Color {
-        // One light implementation for now
-        light::lighting(&comps.object.material(), Some(comps.object), &self.lights[0], &comps.point, &comps.eyev, &comps.normalv, self.is_shadowed(comps.over_point))
+    /// Returns the color in the world at what the ray is intersecting with
+    /// uses the default max_recursion value and is a wrapper for color_at_impl
+    /// # Arguments
+    /// * `ray` Ray to shoot into the world
+    pub fn color_at(&self, ray: &Ray) -> Color {
+        self.color_at_impl(ray, self.max_recursion)
     }
 
-    pub fn color_at(&self, ray: &Ray) -> Color {
+    /// Returns the color in the world at what the ray is intersecting with
+    /// # Arguments
+    /// * `ray` Ray to shoot into the world
+    /// * `remaining` Remaining amount of recursions allowed
+    pub fn color_at_impl(&self, ray: &Ray, remaining: i32) -> Color {
         let intersections = self.intersects(ray);
         let hit = intersection::hit(intersections);
         if hit == None {return Color::new(0.0, 0.0, 0.0)}  // Return black of no hits
         let comps = intersection::prepare_computations(hit.unwrap(), ray);
-        self.shade_hit(comps)
+        self.shade_hit_impl(comps, remaining)
+    }
+
+    /// Returns the color of a point in the world taking into account shadow and reflection
+    /// uses the default max_recursion value and is a wrapper for shade_hit_impl
+    /// # Arguments
+    /// * `comps` Precomputed data of a ray intersection
+    pub fn shade_hit(&self, comps: PrecomputedData<Box<dyn Shape>>) -> Color {
+        self.shade_hit_impl(comps, self.max_recursion)
+    }
+
+    /// Returns the color of a point in the world taking into account shadow and reflection
+    /// # Arguments
+    /// * `comps` Precomputed data of a ray intersection
+    /// * `remaining` Remaining amount of recursions allowed
+    pub fn shade_hit_impl(&self, comps: PrecomputedData<Box<dyn Shape>>, remaining: i32) -> Color {
+        // One light implementation for now
+        let is_shadowed = self.is_shadowed(comps.over_point);
+        let reflected = self.reflected_color_impl(comps.clone(), remaining);
+        let surface = light::lighting(&comps.object.material(), Some(comps.object), &self.lights[0], &comps.point, &comps.eyev, &comps.normalv, is_shadowed);
+        surface + reflected
+    }
+
+    /// Returns the color of a reflected ray in the world
+    /// uses the default max_recursion value and is a wrapper for reflected_color_impl
+    /// # Arguments
+    /// * `comps` Precomputed data of a ray intersection
+    pub fn reflected_color(&self, comps: PrecomputedData<Box<dyn Shape>>) -> Color {
+        self.reflected_color_impl(comps, self.max_recursion)
+    }
+
+    /// Returns the color of a reflected ray in the world
+    /// # Arguments
+    /// * `comps` Precomputed data of a ray intersection
+    /// * `remaining` Remaining amount of recursions allowed
+    pub fn reflected_color_impl(&self, comps: PrecomputedData<Box<dyn Shape>>, remaining: i32) -> Color {
+        // If no more rays remain, return black
+        if remaining < 1 {
+            return Color::black();
+        }
+
+        let reflective = comps.object.material().reflective;
+        if reflective == Float(0.0) {
+            return Color::black()
+        }
+
+        // Shoot a new reflected ray out into the world
+        let reflected_ray = Ray::new(comps.over_point, comps.reflectv);
+        let color = self.color_at_impl(&reflected_ray, remaining-1); // decrement remaining ray value
+
+        color * reflective.value()
     }
 
     pub fn is_shadowed(&self, point: Tuple) -> bool {
@@ -101,6 +161,8 @@ mod tests {
     use crate::tuple::vector;
     use crate::intersection;
     use crate::transformation::translation;
+    use crate::intersection::prepare_computations;
+    use crate::shape::plane::Plane;
 
     #[test]
     fn world_creation() {
@@ -147,7 +209,7 @@ mod tests {
         let c = w.shade_hit(comps);
         assert_eq!(c, Color::new(0.38066, 0.47583, 0.2855));
 
-        // Shading an intsersection from the inside
+        // Shading an intersection from the inside
         let mut w = World::default_world();
         w.lights[0] = Light::point_light(&point(0.0, 0.25, 0.0), &Color::new(1.0, 1.0, 1.0));
         let r = Ray::new(point(0.0, 0.0, 0.0), vector(0.0, 0.0, 1.0));
@@ -227,5 +289,84 @@ mod tests {
         let w = World::default_world();
         let p = point(-2.0, 2.0, -2.0);
         assert_eq!(w.is_shadowed(p), false);
+    }
+
+    #[test]
+    fn world_reflected_color() {
+        // Reflecting a non-reflective color
+        let w = World::default_world();
+        let r = Ray::new(point(0.0, 0.0, 0.0), vector(0.0, 0.0, 1.0));
+        let mut shape = w.objects[1].clone();
+        let mut material = shape.material();
+        material.ambient = Float(1.0);
+        shape.set_material(material);
+        let i = Intersection::new(1.0, shape);
+        let comps = prepare_computations(i, &r);
+        let color = w.reflected_color(comps);
+        assert_eq!(color, Color::new(0.0, 0.0, 0.0));
+
+        // The reflected color for a reflective material
+        let mut w = World::default_world();
+        let mut p = Plane::new();
+        p.material.reflective = Float(0.5);
+        p.transform = translation(0.0, -1.0, 0.0);
+        let shape: Box<dyn Shape> = Box::new(p);
+        w.objects.push(shape.clone());
+        let r = Ray::new(point(0.0, 0.0, -3.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
+        let i = Intersection::new(2.0f64.sqrt(), shape);
+        let comps = prepare_computations(i, &r);
+        let color = w.reflected_color(comps);
+        assert_eq!(color, Color::new(0.19033, 0.237915, 0.14274));
+    }
+
+    #[test]
+    fn world_shade_hit_reflected() {
+        // Shade hit with a reflective material
+        let mut w = World::default_world();
+        let mut p = Plane::new();
+        p.material.reflective = Float(0.5);
+        p.transform = translation(0.0, -1.0, 0.0);
+        let shape: Box<dyn Shape> = Box::new(p);
+        w.objects.push(shape.clone());
+        let r = Ray::new(point(0.0, 0.0, -3.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
+        let i = Intersection::new(2.0f64.sqrt(), shape);
+        let comps = prepare_computations(i, &r);
+        let color = w.shade_hit(comps);
+        assert_eq!(color, Color::new(0.87675, 0.92434, 0.82917));
+    }
+
+    #[test]
+    fn world_reflected_recursion() {
+        // Test if infinite recursion will break the program
+        let mut w = World::new();
+        let light = Light::point_light(&point(0.0, 0.0, 0.0), &Color::new(1.0, 1.0, 1.0));
+        w.lights.push(light);
+        let mut lower = Plane::new();
+        lower.material.reflective = Float(1.0);
+        lower.transform = translation(0.0, -1.0, 0.0);
+        w.objects.push(Box::new(lower));
+        let mut upper = Plane::new();
+        upper.material.reflective = Float(1.0);
+        upper.transform = translation(0.0, 1.0, 0.0);
+        w.objects.push(Box::new(upper));
+        let r = Ray::new(point(0.0, 0.0, 0.0), vector(0.0, 1.0, 0.0));
+        let _c = w.color_at(&r);
+        assert!(true); // The previous line terminated properly!
+    }
+
+
+    #[test]
+    fn world_reflected_recursion_limit() {
+        let mut w = World::default_world();
+        let mut p = Plane::new();
+        p.material.reflective = Float(0.5);
+        p.transform = translation(0.0, -1.0, 0.0);
+        let shape: Box<dyn Shape> = Box::new(p);
+        w.objects.push(shape.clone());
+        let r = Ray::new(point(0.0, 0.0, -3.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
+        let i = Intersection::new(2.0f64.sqrt(), shape);
+        let comps = prepare_computations(i, &r);
+        let color = w.reflected_color_impl(comps, 0);
+        assert_eq!(color, Color::black());
     }
 }
