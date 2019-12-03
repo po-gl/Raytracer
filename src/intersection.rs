@@ -20,6 +20,7 @@ pub struct PrecomputedData<T> {
     pub object: T,
     pub point: Tuple,
     pub over_point: Tuple,
+    pub under_point: Tuple,
     pub eyev: Tuple,
     pub normalv: Tuple,
     pub reflectv: Tuple,
@@ -78,6 +79,7 @@ pub fn prepare_computations(intersection: Intersection<Box<dyn Shape>>, ray: &Ra
     if inside {normalv = -normalv}
 
     let over_point = point + (normalv * FLOAT_THRESHOLD);
+    let under_point = point - (normalv * FLOAT_THRESHOLD);
 
     let reflectv = ray.direction.reflect(&normalv);
 
@@ -129,6 +131,7 @@ pub fn prepare_computations(intersection: Intersection<Box<dyn Shape>>, ray: &Ra
         object: intersection.object,
         point,
         over_point,
+        under_point,
         eyev,
         normalv,
         reflectv,
@@ -295,5 +298,18 @@ mod tests {
             assert_eq!(comps.n1, Float(n_pairs[i].0));
             assert_eq!(comps.n2, Float(n_pairs[i].1));
         }
+    }
+
+    #[test]
+    fn intersection_refraction_under_point() {
+        let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
+        let mut a = Sphere::new_with_material(Material::glass());
+        a.transform = translation(0.0, 0.0, 1.0);
+        let shape: Box<dyn Shape> = Box::new(a.clone());
+        let i = Intersection::new(5.0, shape);
+        let xs = vec![i.clone()];
+        let comps = prepare_computations(i.clone(), &r, xs.clone());
+        assert!(comps.under_point.z > Float(FLOAT_THRESHOLD/2.0));
+        assert!(comps.point.z < comps.under_point.z);
     }
 }
