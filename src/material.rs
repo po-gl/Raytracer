@@ -40,10 +40,10 @@ impl Material {
     pub fn glass() -> Material {
         Material {color: Color::new(1.0, 1.0, 1.0),
             ambient: Float(0.1),
-            diffuse: Float(0.9),
-            specular: Float(0.9),
-            shininess: Float(200.0),
-            reflective: Float(0.0),
+            diffuse: Float(0.1),
+            specular: Float(1.0),
+            shininess: Float(300.0),
+            reflective: Float(0.8),
             transparency: Float(1.0),
             refractive_index: Float(1.5),
             pattern: None}
