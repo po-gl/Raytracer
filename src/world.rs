@@ -10,7 +10,7 @@ use crate::float::Float;
 use crate::{transformation, light, intersection, tuple};
 use crate::tuple::{point, Tuple};
 use crate::ray::Ray;
-use crate::intersection::{Intersection, PrecomputedData};
+use crate::intersection::{Intersection, PrecomputedData, schlick};
 
 const DEFAULT_RAY_BOUNCES: i32 = 4;
 
@@ -96,8 +96,15 @@ impl World {
         let is_shadowed = self.is_shadowed(comps.over_point);
         let reflected = self.reflected_color_impl(comps.clone(), remaining);
         let refracted = self.refracted_color_impl(comps.clone(), remaining);
-        let surface = light::lighting(&comps.object.material(), Some(comps.object), &self.lights[0], &comps.point, &comps.eyev, &comps.normalv, is_shadowed);
-        surface + reflected + refracted
+        let surface = light::lighting(&comps.object.material(), Some(comps.object.clone()), &self.lights[0], &comps.point, &comps.eyev, &comps.normalv, is_shadowed);
+
+        let material = comps.object.material();
+        if material.reflective > Float(0.0) && material.transparency > Float(0.0) {
+            let reflectance = schlick(comps.clone()).value();
+            return surface + reflected * reflectance + refracted * (1.0 - reflectance);
+        } else {
+            return surface + reflected + refracted
+        }
     }
 
     /// Returns the color at a reflected ray in the world
@@ -510,5 +517,29 @@ mod tests {
         let comps = prepare_computations(xs[0].clone(), &r, xs.clone());
         let color = w.shade_hit_impl(comps, 5);
         assert_eq!(color, Color::new(0.93642, 0.68642, 0.68642));
+    }
+    
+    #[test]
+    fn world_schlick_shade_hit() {
+        let mut w = World::default_world();
+        let r = Ray::new(point(0.0, 0.0, -3.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
+        let mut p = Plane::new();
+        p.material.reflective = Float(0.5); // Similar to another test minus this reflective material
+        p.material.transparency = Float(0.5);
+        p.material.refractive_index = Float(1.5);
+        p.transform = translation(0.0, -1.0, 0.0);
+        let shape_p: Box<dyn Shape> = Box::new(p);
+        w.objects.push(shape_p.clone());
+        let mut b = Plane::new();
+        b.material.color = Color::new(1.0, 0.0, 0.0);
+        b.material.ambient = Float(0.5);
+        b.transform = translation(0.0, -3.5, -0.5);
+        let shape_b: Box<dyn Shape> = Box::new(b);
+        w.objects.push(shape_b.clone());
+        let r = Ray::new(point(0.0, 0.0, -3.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
+        let xs = vec![Intersection::new(2.0f64.sqrt(), shape_p)];
+        let comps = prepare_computations(xs[0].clone(), &r, xs.clone());
+        let color = w.shade_hit_impl(comps, 5);
+        assert_eq!(color, Color::new(0.93391, 0.69643, 0.69243));
     }
 }
