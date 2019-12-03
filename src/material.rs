@@ -13,6 +13,8 @@ pub struct Material {
     pub specular: Float,
     pub shininess: Float,
     pub reflective: Float,
+    pub transparency: Float,
+    pub refractive_index: Float,
     pub pattern: Option<Box<dyn Pattern>>,
 }
 
@@ -24,11 +26,41 @@ impl Material {
                   specular: Float(0.9),
                   shininess: Float(200.0),
                   reflective: Float(0.0),
+                  transparency: Float(0.0),
+                  refractive_index: Float(1.0),
                   pattern: None}
     }
 
     pub fn set_pattern(&mut self, pattern: Box<dyn Pattern>) {
         self.pattern = Some(pattern)
+    }
+
+    // Common materials
+
+    pub fn glass() -> Material {
+        Material {color: Color::new(1.0, 1.0, 1.0),
+            ambient: Float(0.1),
+            diffuse: Float(0.9),
+            specular: Float(0.9),
+            shininess: Float(200.0),
+            reflective: Float(0.0),
+            transparency: Float(1.0),
+            refractive_index: Float(1.5),
+            pattern: None}
+    }
+
+    // Common material values
+
+    pub fn water_refractive_index() -> Float {
+        Float(1.333)
+    }
+
+    pub fn glass_refractive_index() -> Float {
+        Float(1.52)
+    }
+
+    pub fn diamond_refractive_index() -> Float {
+        Float(2.417)
     }
 }
 
@@ -73,6 +105,13 @@ mod tests {
     fn material_reflective() {
         let m = Material::new();
         assert_eq!(m.reflective, 0.0);
+    }
+
+    #[test]
+    fn material_refraction() {
+        let m = Material::new();
+        assert_eq!(m.transparency, 0.0);
+        assert_eq!(m.refractive_index, 1.0);
     }
 }
 
