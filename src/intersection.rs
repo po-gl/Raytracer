@@ -141,6 +141,28 @@ pub fn prepare_computations(intersection: Intersection<Box<dyn Shape>>, ray: &Ra
     }
 }
 
+pub fn schlick(comps: PrecomputedData<Box<dyn Shape>>) -> Float {
+    // Find cosine of the angle between the eye and normal vectors
+    let mut cos = tuple::dot(&comps.eyev, &comps.normalv);
+
+    // Total internal reflection only occurs when n1 > n2
+    if comps.n1 > comps.n2 {
+        let n = comps.n1 / comps.n2;
+        let sin2_t = n * n * (1.0 - cos * cos);
+        if sin2_t > Float(1.0) {
+            return Float(1.0)
+        }
+
+        // cosine of theta_t (using trig identity)
+        let cos_t = (1.0 - sin2_t).sqrt();
+
+        cos = cos_t;
+    }
+
+    let r0 = ((comps.n1 - comps.n2) / (comps.n1 + comps.n2)).value().powi(2);
+    return Float(r0 + (1.0 - r0) * (1.0 - cos).powi(5));
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -311,5 +333,49 @@ mod tests {
         let comps = prepare_computations(i.clone(), &r, xs.clone());
         assert!(comps.under_point.z > Float(FLOAT_THRESHOLD/2.0));
         assert!(comps.point.z < comps.under_point.z);
+    }
+
+    #[test]
+    fn intersection_schlick_total_internal_reflection() {
+        let a = Sphere::new_with_material(Material::glass());
+        let shape: Box<dyn Shape> = Box::new(a.clone());
+        let r = Ray::new(point(0.0, 0.0, 2.0f64.sqrt()/2.0), vector(0.0, 1.0, 0.0));
+        let xs = vec![
+            Intersection::new(-2.0f64.sqrt()/2.0, shape.clone()),
+            Intersection::new(2.0f64.sqrt()/2.0, shape.clone()),
+        ];
+        let comps = prepare_computations(xs[1].clone(), &r, xs.clone());
+        let reflectance = schlick(comps);
+        assert_eq!(reflectance, 1.0);
+    }
+
+    #[test]
+    fn intersection_schlick_perpendicular() {
+        // reflectance should be small when a ray strikes at a perpendicular angle
+        let a = Sphere::new_with_material(Material::glass());
+        let shape: Box<dyn Shape> = Box::new(a.clone());
+        let r = Ray::new(point(0.0, 0.0, 0.0), vector(0.0, 1.0, 0.0));
+        let xs = vec![
+            Intersection::new(-1.0, shape.clone()),
+            Intersection::new(1.0, shape.clone()),
+        ];
+        let comps = prepare_computations(xs[1].clone(), &r, xs.clone());
+        let reflectance = schlick(comps);
+        assert_eq!(reflectance, 0.04);
+    }
+
+    #[test]
+    fn intersection_schlick_significant() {
+        // When n2 > n1 and the ray strikes at a small angle,
+        // reflectance should be significant
+        let a = Sphere::new_with_material(Material::glass());
+        let shape: Box<dyn Shape> = Box::new(a.clone());
+        let r = Ray::new(point(0.0, 0.99, -2.0), vector(0.0, 0.0, 1.0));
+        let xs = vec![
+            Intersection::new(1.8589, shape.clone()),
+        ];
+        let comps = prepare_computations(xs[0].clone(), &r, xs.clone());
+        let reflectance = schlick(comps);
+        assert_eq!(reflectance, 0.48873);
     }
 }
