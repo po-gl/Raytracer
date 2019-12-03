@@ -3,6 +3,7 @@
 
 #[macro_use] extern crate impl_ops;
 #[macro_use] extern crate lazy_static;
+extern crate num_traits;
 
 use std::env;
 use std::time::Instant;
@@ -77,6 +78,10 @@ fn main() {
         "draw-reflected-scene" => {
             println!("Running Example \"{}\"", example);
             examples::draw_reflected_scene();
+        },
+        "draw-refracted-scene" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_refracted_scene();
         },
         _ => println!("No valid argument.")
     }

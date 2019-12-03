@@ -26,6 +26,93 @@ use crate::pattern::Pattern;
 use crate::pattern::gradient_pattern::GradientPattern;
 use crate::pattern::blended_pattern::BlendedPattern;
 use crate::pattern::perturbed_pattern::PerturbedPattern;
+use crate::shape::cube::Cube;
+
+
+pub fn draw_refracted_scene() {
+    // Options
+    let canvas_width = 600;
+    let canvas_height = 600;
+    let fov = PI/3.0;
+
+    // Construct world
+    let mut world = World::new();
+
+    let mut floor = Plane::new();
+    floor.transform = scaling(10.0, 0.01, 10.0);
+    let mut material = Material::new();
+    material.reflective = Float(0.4);
+    let pattern_b = RingPattern::new(Color::from_hex("FF0000"), Color::new(0.2, 0.2, 0.6));
+    let mut pattern = PerturbedPattern::new(Box::new(pattern_b), 0.15);
+    pattern.set_transform(transformation::scaling(0.1, 0.1, 0.1));
+    material.set_pattern(Box::new(pattern));
+    material.color = Color::from_hex("FFE2BA");
+    material.specular = Float(0.0);
+    floor.material = material;
+    world.objects.push(Box::new(floor));
+
+    let mut glass_sphere = Sphere::new();
+    glass_sphere.transform = translation(-0.5, 0.45, -2.0) * scaling(0.45, 0.45, 0.45);
+    let material = Material::glass();
+    glass_sphere.material = material;
+    world.objects.push(Box::new(glass_sphere));
+
+    let mut pedestal = Cube::new();
+    pedestal.transform = translation(0.8, 1.0, -1.0) * rotation_y(PI/6.0) * scaling(0.2, 1.0, 0.5);
+    let mut material = Material::glass();
+    material.diffuse = Float(0.01);
+    material.refractive_index = Float(1.8);
+    pedestal.material = material;
+    world.objects.push(Box::new(pedestal));
+
+    let mut middle_sphere = Sphere::new();
+    middle_sphere.transform = translation(-0.5, 1.0, 0.5);
+    let mut material = Material::new();
+    let pattern_a = RingPattern::new(Color::from_hex("F4C095"), Color::from_hex("679289"));
+    let mut pattern = PerturbedPattern::new(Box::new(pattern_a), 0.15);
+    pattern.set_transform(transformation::scaling(0.1, 0.1, 0.1) * transformation::rotation_y(PI/6.0) * transformation::rotation_x(-PI/6.0));
+    material.set_pattern(Box::new(pattern));
+    material.color = Color::from_hex("7AC16C");
+    material.diffuse = Float(0.8);
+    material.specular = Float(0.7);
+    middle_sphere.material = material;
+    world.objects.push(Box::new(middle_sphere));
+
+    let mut right_sphere = Sphere::new();
+    right_sphere.transform = translation(1.5, 0.5, -0.5) * scaling(0.5, 0.5, 0.5);
+    let mut material = Material::new();
+    material.reflective = Float(0.4);
+    let mut pattern = StripePattern::new(Color::white(), Color::black());
+    pattern.set_transform(transformation::rotation_z(-PI/12.0) * transformation::scaling(0.1, 0.1, 0.1));
+    material.set_pattern(Box::new(pattern));
+    material.color = Color::from_hex("56D8CD");
+    material.diffuse = Float(0.7);
+    material.specular = Float(0.3);
+    right_sphere.material = material;
+    world.objects.push(Box::new(right_sphere));
+
+    let mut left_sphere = Sphere::new();
+    left_sphere.transform = translation(-1.5, 0.33, -0.75) * scaling(0.33, 0.33, 0.33);
+    let mut material = Material::new();
+    material.reflective = Float(0.7);
+    material.color = Color::from_hex("6F2DBD");
+    material.diffuse = Float(0.7);
+    material.specular = Float(0.3);
+    left_sphere.material = material;
+    world.objects.push(Box::new(left_sphere));
+
+    let light = Light::point_light(&point(-10.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0));
+    world.lights.push(light);
+
+    // Create camera and render scene
+    let mut camera = Camera::new(canvas_width, canvas_height, fov);
+    camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
+
+    let canvas = camera.render(world);
+    file::write_to_file(canvas.to_ppm(), String::from("refracted_scene.ppm"))
+}
+
+//--------------------------------------------------
 
 pub fn draw_reflected_scene() {
     // Options
@@ -93,7 +180,7 @@ pub fn draw_reflected_scene() {
     camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
 
     let canvas = camera.render(world);
-    file::write_to_file(canvas.to_ppm(), String::from("reflected_scene.ppm"))
+    file::write_to_file(canvas.to_ppm(), String::from("refracted_scene.ppm"))
 }
 
 //--------------------------------------------------
