@@ -96,7 +96,16 @@ impl World {
         let is_shadowed = self.is_shadowed(comps.over_point);
         let reflected = self.reflected_color_impl(comps.clone(), remaining);
         let refracted = self.refracted_color_impl(comps.clone(), remaining);
-        let surface = light::lighting(&comps.object.material(), Some(comps.object.clone()), &self.lights[0], &comps.point, &comps.eyev, &comps.normalv, is_shadowed);
+
+        let material: Material;
+        let parent = comps.object.parent();
+        if parent != None {
+            material = parent.unwrap().material();
+        } else {
+            material = comps.object.material();
+        }
+
+        let surface = light::lighting(&material, Some(comps.object.clone()), &self.lights[0], &comps.point, &comps.eyev, &comps.normalv, is_shadowed);
 
         let material = comps.object.material();
         if material.reflective > Float(0.0) && material.transparency > Float(0.0) {
