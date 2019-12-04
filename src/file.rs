@@ -22,6 +22,7 @@ pub mod obj_loader {
     use crate::shape::group::Group;
     use crate::shape::Shape;
     use crate::shape::triangle::Triangle;
+    use indicatif::ProgressStyle;
 
     /// A one based array
     #[derive(Debug)]
@@ -76,12 +77,12 @@ pub mod obj_loader {
                 default_group: Group::new(),
             };
 
-            let mut progress = 0;
-            let total_lines = lines.len();
+            let pb = indicatif::ProgressBar::new(lines.len() as u64);
+            pb.set_style(ProgressStyle::default_bar()
+                .template("[{elapsed_precise}] {bar:50} {pos:>7}/{len:7} {msg}"));
 
             for line in lines {
-                println!("Progress for obj: {}/{} lines", &progress, total_lines);
-                progress += 1;
+                pb.inc(1);
 
                 let char_res = line.chars().next();
                 if char_res.is_none() {
@@ -93,6 +94,7 @@ pub mod obj_loader {
                     _ => parser.ignored_lines += 1
                 }
             }
+            pb.finish_with_message("Finished parsing object");
             Ok(parser)
         }
 

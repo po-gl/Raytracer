@@ -83,7 +83,7 @@ impl Camera {
             }
             pb.inc(1);
         }
-        pb.finish_with_message("Finished!");
+        pb.finish_with_message("Finished Rendering!");
         image
     }
 }
