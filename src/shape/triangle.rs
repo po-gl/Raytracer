@@ -9,7 +9,7 @@ use std::any::Any;
 use std::fmt::{Formatter, Error};
 use crate::ray::Ray;
 use crate::intersection::Intersection;
-use crate::tuple::{Tuple, vector};
+use crate::tuple::{Tuple};
 use crate::float::Float;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -135,7 +135,7 @@ impl Shape for Triangle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tuple::point;
+    use crate::tuple::{point, vector};
 
     #[test]
     fn triangle_creation() {
