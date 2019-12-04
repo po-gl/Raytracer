@@ -96,7 +96,7 @@ impl Shape for Plane {
         return vec![Intersection::new(t.value(), Box::new(self.clone()))]
     }
 
-    fn normal_at(&self, _world_point: &Tuple) -> Tuple {
+    fn normal_at(&self, _point: &Tuple) -> Tuple {
         // Constant normal of an xy plane
         vector(0.0, 1.0, 0.0)
     }
