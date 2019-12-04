@@ -91,6 +91,10 @@ fn main() {
             println!("Running Example \"{}\"", example);
             examples::draw_cylinder_refracted_scene();
         },
+        "draw-cone-scene" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_cone_scene();
+        },
         _ => println!("No valid argument.")
     }
 

@@ -29,6 +29,91 @@ use crate::pattern::perturbed_pattern::PerturbedPattern;
 use crate::shape::cube::Cube;
 use crate::pattern::checker_pattern::CheckerPattern;
 use crate::shape::cylinder::Cylinder;
+use crate::shape::cone::Cone;
+
+
+pub fn draw_cone_scene() {
+    // Options
+    let canvas_width = 500;
+    let canvas_height = 500;
+    let fov = PI/3.0;
+
+    // Construct world
+    let mut world = World::new();
+
+    let mut floor = Plane::new();
+    floor.transform = scaling(10.0, 0.01, 10.0);
+    let mut material = Material::new();
+    material.reflective = Float(0.4);
+    let pattern_b = RingPattern::new(Color::from_hex("FFE4C6"), Color::from_hex("B5BD89"));
+    let mut pattern = PerturbedPattern::new(Box::new(pattern_b), 0.15);
+    pattern.set_transform(transformation::scaling(0.1, 0.1, 0.1));
+    material.set_pattern(Box::new(pattern));
+    material.ambient = Float(0.15);
+    material.specular = Float(0.0);
+    floor.material = material;
+    world.objects.push(Box::new(floor));
+
+    let mut middle_cone = Cone::new_bounded(-1.0, 1.0);
+    middle_cone.closed = true;
+    middle_cone.transform = translation(0.0, 2.0, 0.0) * scaling(1.0, 2.0, 1.0);
+    let material = Material::mirror();
+//    let mut material = Material::new();
+//    material.color = Color::from_hex("729EA1");
+    middle_cone.material = material;
+    world.objects.push(Box::new(middle_cone));
+
+    let colors = vec![
+        Color::from_hex("FF0000"),
+        Color::from_hex("FF00FF"),
+        Color::from_hex("0000FF"),
+        Color::from_hex("00cc00"),
+        Color::from_hex("FFFF00"),
+
+        Color::from_hex("FF0000"),
+        Color::from_hex("FF00FF"),
+        Color::from_hex("0000FF"),
+        Color::from_hex("00cc00"),
+        Color::from_hex("FFFF00"),
+
+        Color::from_hex("FF0000"),
+    ];
+    for i in 0..colors.len() {
+        let rotation = PI/6.0 + PI/6.0 * i as f64;
+        let mut cylinder = Cylinder::new_bounded(0.0, 2.0);
+        cylinder.closed = true;
+        cylinder.transform = rotation_y(rotation) * translation(0.0, 1.0, -3.0) * scaling(0.4, 1.0, 0.4);
+//        let material = Material::mirror();
+        let mut material = Material::new();
+        material.color = colors[i];
+        cylinder.material = material;
+        world.objects.push(Box::new(cylinder));
+
+        let mut glass_sphere = Sphere::new();
+        glass_sphere.transform = rotation_y(rotation) * translation(0.0, 3.5, -3.0) * scaling(0.2, 0.2, 0.2);
+        let material = Material::glass();
+        glass_sphere.material = material;
+        world.objects.push(Box::new(glass_sphere));
+
+        glass_sphere = Sphere::new();
+        glass_sphere.transform = rotation_y(rotation) * translation(0.0, 0.2, -3.0) * scaling(0.2, 0.2, 0.2);
+        let material = Material::glass();
+        glass_sphere.material = material;
+        world.objects.push(Box::new(glass_sphere));
+    }
+
+    let light = Light::point_light(&point(-10.0, 16.0, -10.0), &Color::new(1.0, 1.0, 1.0));
+    world.lights.push(light);
+
+    // Create camera and render scene
+    let mut camera = Camera::new(canvas_width, canvas_height, fov);
+    camera.transform = view_transform(point(0.0, 3.5, -6.5), point(0.0, 2.0, 0.0), vector(0.0, 1.0, 0.0));
+
+    let canvas = camera.render(world);
+    file::write_to_file(canvas.to_ppm(), String::from("cone_scene.ppm"))
+}
+
+//--------------------------------------------------
 
 
 pub fn draw_cylinder_refracted_scene() {
@@ -116,7 +201,6 @@ pub fn draw_cylinder_refracted_scene() {
 
     // Create camera and render scene
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
-//    camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
     camera.transform = view_transform(point(0.0, 5.0, -10.0), point(0.0, 0.0, 0.0), vector(0.0, 1.0, 0.0));
 
     let canvas = camera.render(world);
@@ -184,7 +268,6 @@ pub fn draw_cylinder_scene() {
 
     // Create camera and render scene
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
-//    camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
     camera.transform = view_transform(point(0.0, 4.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
 
     let canvas = camera.render(world);
