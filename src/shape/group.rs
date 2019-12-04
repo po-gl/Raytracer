@@ -38,7 +38,10 @@ impl Group {
     }
 
     pub fn add_child(&mut self, child: &mut Box<dyn Shape>) {
-        child.set_parent(Box::new(self.clone()));
+        let mut temp_parent = self.clone();
+        temp_parent.shapes.clear();
+        let new_parent: Box<dyn Shape> = Box::new(temp_parent);
+        child.set_parent(new_parent);
         self.shapes.push(child.clone());
     }
 }
