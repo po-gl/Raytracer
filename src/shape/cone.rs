@@ -95,8 +95,9 @@ impl Shape for Cone {
         self.parent.clone()
     }
 
-    fn set_parent(&mut self, parent: Box<dyn Shape>) {
+    fn set_parent(&mut self, parent: Box<dyn Shape>) -> Box<dyn Shape>{
         self.parent = Some(parent);
+        Box::new(self.clone())
     }
 
     fn transform(&self) -> Matrix4 {
@@ -181,10 +182,7 @@ impl Shape for Cone {
         }
     }
 
-    fn normal_at(&self, world_point: &Tuple) -> Tuple {
-        // Transform point to local space
-        let point = self.transform.inverse() * world_point;
-
+    fn normal_at(&self, point: &Tuple) -> Tuple {
         let distance = point.x * point.x + point.z * point.z;
 
         if distance < Float(1.0) && point.y >= Float(self.maximum) - FLOAT_THRESHOLD {

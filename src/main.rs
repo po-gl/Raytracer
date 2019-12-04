@@ -95,6 +95,10 @@ fn main() {
             println!("Running Example \"{}\"", example);
             examples::draw_cone_scene();
         },
+        "draw-hexagon-scene" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_hexagon_scene();
+        },
         _ => println!("No valid argument.")
     }
 

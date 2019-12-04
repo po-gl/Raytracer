@@ -6,7 +6,7 @@ use crate::float::Float;
 use crate::ray::Ray;
 use crate::tuple::Tuple;
 use crate::shape::Shape;
-use crate::{tuple, FLOAT_THRESHOLD};
+use crate::{tuple, FLOAT_THRESHOLD, shape};
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Intersection<T> {
@@ -71,7 +71,7 @@ pub fn prepare_computations(intersection: Intersection<Box<dyn Shape>>, ray: &Ra
                             intersections: Vec<Intersection<Box<dyn Shape>>>) -> PrecomputedData<Box<dyn Shape>> {
 
     let point = ray.position(intersection.t.value());
-    let mut normalv = intersection.object.normal_at(&point);
+    let mut normalv =  shape::normal_at(intersection.object.clone(), point);
     let eyev = -ray.direction;
     let inside = Float(tuple::dot(&normalv, &eyev)) < Float(0.0);
 

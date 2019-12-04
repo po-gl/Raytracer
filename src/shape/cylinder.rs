@@ -95,8 +95,9 @@ impl Shape for Cylinder {
         self.parent.clone()
     }
 
-    fn set_parent(&mut self, parent: Box<dyn Shape>) {
+    fn set_parent(&mut self, parent: Box<dyn Shape>) -> Box<dyn Shape>{
         self.parent = Some(parent);
+        Box::new(self.clone())
     }
 
     fn transform(&self) -> Matrix4 {
@@ -165,10 +166,7 @@ impl Shape for Cylinder {
         }
     }
 
-    fn normal_at(&self, world_point: &Tuple) -> Tuple {
-        // Transform point to local space
-        let point = self.transform.inverse() * world_point;
-
+    fn normal_at(&self, point: &Tuple) -> Tuple {
         let distance = point.x * point.x + point.z * point.z;
 
         if distance < Float(1.0) && point.y >= Float(self.maximum) - FLOAT_THRESHOLD {
@@ -244,7 +242,7 @@ mod tests {
 
         for i in 0..examples.len() {
             let cyl = Cylinder::new();
-            let n = cyl.normal_at(&examples[i].0);
+            let n = shape::normal_at(Box::new(cyl), examples[i].0);
             assert_eq!(n, examples[i].1);
         }
     }
@@ -312,7 +310,7 @@ mod tests {
             cyl.minimum = 1.0;
             cyl.maximum = 2.0;
             cyl.closed = true;
-            let n = cyl.normal_at(&examples[i].0);
+            let n = shape::normal_at(Box::new(cyl), examples[i].0);
             assert_eq!(n, examples[i].1);
         }
     }

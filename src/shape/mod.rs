@@ -6,11 +6,11 @@ use crate::ray::Ray;
 use std::sync::Mutex;
 use crate::intersection::Intersection;
 use crate::matrix::Matrix4;
-use crate::tuple::Tuple;
+use crate::tuple::{Tuple};
 use std::any::Any;
 use std::fmt::{Debug, Formatter, Error};
 use crate::material::Material;
-use crate::tuple;
+use crate::float::Float;
 
 pub mod test_shape;
 pub mod sphere;
@@ -19,6 +19,7 @@ pub mod cube;
 pub mod cylinder;
 pub mod cone;
 pub mod group;
+pub mod triangle;
 
 
 lazy_static! {
@@ -45,7 +46,7 @@ pub trait Shape: Any {
 
     fn parent(&self) -> Option<Box<dyn Shape>>;
 
-    fn set_parent(&mut self, parent: Box<dyn Shape>);
+    fn set_parent(&mut self, parent: Box<dyn Shape>) -> Box<dyn Shape>;
 
     fn transform(&self) -> Matrix4;
 
@@ -62,7 +63,10 @@ pub trait Shape: Any {
 
 impl PartialEq for Box<dyn Shape> {
     fn eq(&self, other: &Box<dyn Shape>) -> bool {
-        self.box_eq(other.as_any())
+//        self.box_eq(other.as_any())
+        self.id() == other.id() &&
+        self.material() == other.material() &&
+        self.transform() == other.transform()
     }
 }
 
@@ -78,14 +82,33 @@ impl Clone for Box<dyn Shape> {
     }
 }
 
-
+/// Recursively converts a point to its parent's point until
+/// getting a world space point
 pub fn world_to_object(shape: Box<dyn Shape>, point: Tuple) -> Tuple {
-    if shape.parent() == None {
-        return shape.transform().inverse() * point;
-    } else {
-        world_to_object(shape.parent().unwrap(), point);
+    let mut new_point = point;
+    if shape.parent() != None {
+        new_point = world_to_object(shape.parent().unwrap(), point);
     }
-    return tuple::point(0.0, 0.0, 0.0);
+    return shape.transform().inverse() * new_point;
+}
+
+/// Recursively convert a normal to world space
+pub fn normal_to_world(shape: Box<dyn Shape>, normal: Tuple) -> Tuple {
+    let mut new_normal: Tuple = shape.transform().inverse().transpose() * normal;
+    new_normal.w = Float(0.0);
+    new_normal = new_normal.normalize();
+
+    if shape.parent() != None {
+        new_normal = normal_to_world(shape.parent().unwrap(), new_normal);
+    }
+
+    return new_normal
+}
+
+pub fn normal_at(shape: Box<dyn Shape>, world_point: Tuple) -> Tuple {
+    let local_point = world_to_object(shape.clone(), world_point);
+    let local_normal = shape.normal_at(&local_point);
+    return normal_to_world(shape, local_normal);
 }
 
 
@@ -99,6 +122,7 @@ mod tests {
     use crate::transformation::{rotation_y, scaling, translation};
     use std::f64::consts::PI;
     use crate::shape::sphere::Sphere;
+    use crate::tuple::{point, vector};
 
     #[test]
     fn shape_creation() {
@@ -134,24 +158,46 @@ mod tests {
 
     #[test]
     fn shape_world_to_object() {
-        let mut g1 = Group::new();
+        let mut g1: Box<dyn Shape> = Box::new(Group::new());
         g1.set_transform(rotation_y(PI/2.0));
-        let mut g2 = Group::new();
+        let mut g2: Box<dyn Shape> = Box::new(Group::new());
         g2.set_transform(scaling(2.0, 2.0, 2.0));
-
         let mut s: Box<dyn Shape> = Box::new(Sphere::new());
         s.set_transform(translation(5.0, 0.0, 0.0));
 
-//        g1.add_child(&mut g2.as_shape());
-//
-//        g2.add_child(&mut s);
+        s.set_parent(g2.set_parent(g1));
 
-//        let s = g2.shapes[0].clone();
-
-//        println!("g1: {:?}", g1);
-////        println!("g2: {:?}", g2);
-//        println!("g2shape: {:?}", g2shape);
-//        println!("s: {:?}", s);
-//        assert!(false);
+        let p = world_to_object(s, point(-2.0, 0.0, -10.0));
+        assert_eq!(p, point(0.0, 0.0, -1.0));
     }
+    
+    #[test]
+    fn shape_normal_to_world() {
+        let mut g1: Box<dyn Shape> = Box::new(Group::new());
+        g1.set_transform(rotation_y(PI/2.0));
+        let mut g2: Box<dyn Shape> = Box::new(Group::new());
+        g2.set_transform(scaling(1.0, 2.0, 3.0));
+        let mut s: Box<dyn Shape> = Box::new(Sphere::new());
+        s.set_transform(translation(5.0, 0.0, 0.0));
+
+        s.set_parent(g2.set_parent(g1));
+
+        let n = normal_to_world(s, vector(3.0f64.sqrt()/3.0, 3.0f64.sqrt()/3.0, 3.0f64.sqrt()/3.0));
+        assert_eq!(n, vector(0.285714, 0.428571, -0.857142))
+    }
+
+    #[test]
+    fn shape_normal_at_child() {
+        let mut g1: Box<dyn Shape> = Box::new(Group::new());
+        g1.set_transform(rotation_y(PI/2.0));
+        let mut g2: Box<dyn Shape> = Box::new(Group::new());
+        g2.set_transform(scaling(1.0, 2.0, 3.0));
+        let mut s: Box<dyn Shape> = Box::new(Sphere::new());
+        s.set_transform(translation(5.0, 0.0, 0.0));
+
+        s.set_parent(g2.set_parent(g1));
+        let n = normal_at(s, point(1.7321, 1.1547, -5.5774));
+        assert_eq!(n, vector(0.28570368, 0.428543, -0.857160))
+    }
+
 }

@@ -31,7 +31,11 @@ impl Tuple {
 
     pub fn normalize(&self) -> Tuple {
         let magnitude = self.magnitude();
-        Tuple::new(&self.x.value() / magnitude, &self.y.value() / magnitude, &self.z.value() / magnitude, &self.w.value() / magnitude)
+        if Float(magnitude) == Float(0.0) {
+            return Tuple::new(0.0, 0.0, 0.0, 0.0);
+        } else {
+            Tuple::new(&self.x.value() / magnitude, &self.y.value() / magnitude, &self.z.value() / magnitude, &self.w.value() / magnitude)
+        }
     }
 
     pub fn reflect(&self, normal: &Tuple) -> Tuple {

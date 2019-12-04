@@ -63,8 +63,9 @@ impl Shape for Sphere {
         self.parent.clone()
     }
 
-    fn set_parent(&mut self, parent: Box<dyn Shape>) {
+    fn set_parent(&mut self, parent: Box<dyn Shape>) -> Box<dyn Shape>{
         self.parent = Some(parent);
+        Box::new(self.clone())
     }
 
     fn transform(&self) -> Matrix4 {
@@ -106,8 +107,7 @@ impl Shape for Sphere {
         }
     }
 
-    fn normal_at(&self, world_point: &Tuple) -> Tuple {
-        let object_point = self.transform.inverse() * world_point;
+    fn normal_at(&self, object_point: &Tuple) -> Tuple {
         let object_normal = object_point - point(0.0, 0.0, 0.0);
         let mut world_normal = self.transform.inverse().transpose() * object_normal;
         world_normal.w = Float(0.0);
@@ -120,7 +120,6 @@ mod tests {
     use super::*;
     use crate::transformation;
     use crate::tuple::vector;
-    use std::f64::consts::PI;
 
     #[test]
     fn sphere_intersection() {
@@ -200,41 +199,6 @@ mod tests {
         assert_eq!(xs.len(), 0);
     }
 
-    #[test]
-    fn sphere_normals() {
-        let s = Sphere::new();
-        let n = s.normal_at(&point(1.0, 0.0, 0.0));
-        assert_eq!(n, vector(1.0, 0.0, 0.0));
-
-        let s = Sphere::new();
-        let n = s.normal_at(&point(0.0, 1.0, 0.0));
-        assert_eq!(n, vector(0.0, 1.0, 0.0));
-
-        let s = Sphere::new();
-        let n = s.normal_at(&point(0.0, 0.0, 1.0));
-        assert_eq!(n, vector(0.0, 0.0, 1.0));
-
-        let s = Sphere::new();
-        let n = s.normal_at(&point(3.0f64.sqrt()/3.0, 3.0f64.sqrt()/3.0, 3.0f64.sqrt()/3.0));
-        assert_eq!(n, vector(3.0f64.sqrt()/3.0, 3.0f64.sqrt()/3.0, 3.0f64.sqrt()/3.0));
-
-        // Verify normals are normalized
-        let s = Sphere::new();
-        let n = s.normal_at(&point(3.0f64.sqrt()/3.0, 3.0f64.sqrt()/3.0, 3.0f64.sqrt()/3.0));
-        assert_eq!(n, n.normalize());
-
-        // Transformed normals
-        let mut s = Sphere::new();
-        s.set_transform(transformation::translation(0.0, 1.0, 0.0));
-        let n = s.normal_at(&point(0.0, 1.70711, -0.70711));
-        assert_eq!(n, vector(0.0, 0.70711, -0.70711));
-
-        let mut s = Sphere::new();
-        let m = transformation::scaling(1.0, 0.5, 1.0) * transformation::rotation_z(PI/5.0);
-        s.set_transform(m);
-        let n = s.normal_at(&point(0.0, 2.0f64.sqrt()/2.0, -2.0f64.sqrt()/2.0));
-        assert_eq!(n, vector(0.0, 0.97014, -0.24254));
-    }
 
     #[test]
     fn sphere_material() {

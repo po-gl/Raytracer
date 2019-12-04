@@ -62,8 +62,9 @@ impl Shape for Cube {
         self.parent.clone()
     }
 
-    fn set_parent(&mut self, parent: Box<dyn Shape>) {
+    fn set_parent(&mut self, parent: Box<dyn Shape>) -> Box<dyn Shape>{
         self.parent = Some(parent);
+        Box::new(self.clone())
     }
 
     fn transform(&self) -> Matrix4 {
@@ -103,18 +104,16 @@ impl Shape for Cube {
         ]
     }
 
-    fn normal_at(&self, world_point: &Tuple) -> Tuple {
-        // Transform point to local space
-        let point = self.transform.inverse() * world_point;
+    fn normal_at(&self, object_point: &Tuple) -> Tuple {
 
-        let maxc = point.x.value().abs().max(point.y.value().abs().max(point.z.value().abs()));
+        let maxc = object_point.x.value().abs().max(object_point.y.value().abs().max(object_point.z.value().abs()));
 
-        if Float(maxc) == Float(point.x.value().abs()) {
-            return vector(point.x.value(), 0.0, 0.0)
-        } else if Float(maxc) == Float(point.y.value().abs()) {
-            return vector(0.0, point.y.value(), 0.0)
+        if Float(maxc) == Float(object_point.x.value().abs()) {
+            return vector(object_point.x.value(), 0.0, 0.0)
+        } else if Float(maxc) == Float(object_point.y.value().abs()) {
+            return vector(0.0, object_point.y.value(), 0.0)
         } else {
-            return vector(0.0, 0.0, point.z.value())
+            return vector(0.0, 0.0, object_point.z.value())
         }
     }
 }
@@ -212,7 +211,7 @@ mod tests {
         for i in 0..examples.len() {
             let c = Cube::new();
             let p = examples[i].0;
-            let normal = c.normal_at(&p);
+            let normal = shape::normal_at(Box::new(c), p);
             assert_eq!(normal, examples[i].1)
         }
     }

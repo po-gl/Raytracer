@@ -60,8 +60,9 @@ impl Shape for TestShape {
         self.parent.clone()
     }
 
-    fn set_parent(&mut self, parent: Box<dyn Shape>) {
+    fn set_parent(&mut self, parent: Box<dyn Shape>) -> Box<dyn Shape>{
         self.parent = Some(parent);
+        Box::new(self.clone())
     }
 
     fn transform(&self) -> Matrix4 {
