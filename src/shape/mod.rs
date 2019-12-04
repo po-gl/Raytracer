@@ -14,6 +14,7 @@ use crate::material::Material;
 pub mod test_shape;
 pub mod sphere;
 pub mod cube;
+pub mod cylinder;
 pub mod plane;
 
 
