@@ -82,11 +82,12 @@ impl Shape for Sphere {
 
         let discriminant = b * b - 4.0 * a * c;
 
-        if discriminant < 0.0 {
+        if Float(discriminant) < Float(0.0) {
             return vec![Intersection::new(0.0, Box::new(self.clone())); 0]
         } else {
-            let t1 = (-b - discriminant.sqrt()) / (2.0 * a);
-            let t2 = (-b + discriminant.sqrt()) / (2.0 * a);
+            let disc_sqrt = discriminant.sqrt();
+            let t1 = (-b - disc_sqrt) / (2.0 * a);
+            let t2 = (-b + disc_sqrt) / (2.0 * a);
             return vec![Intersection::new(t1, Box::new(self.clone())),
                         Intersection::new(t2, Box::new(self.clone()))];
         }
