@@ -7,6 +7,7 @@ use crate::ray::Ray;
 use crate::tuple::point;
 use crate::world::World;
 use crate::canvas::Canvas;
+use indicatif::ProgressStyle;
 
 #[derive(Debug)]
 pub struct Camera {
@@ -70,13 +71,19 @@ impl Camera {
     pub fn render(&self, world: World) -> Canvas {
         let mut image = Canvas::new(self.h_size, self.v_size);
 
+        let pb = indicatif::ProgressBar::new(self.v_size as u64);
+        pb.set_style(ProgressStyle::default_bar()
+            .template("[{elapsed_precise}] {bar:50} {pos:>7}/{len:7} {msg}"));
+
         for y in 0..self.v_size {
             for x in 0..self.h_size {
                 let ray = self.ray_for_pixel(x, y);
                 let color = world.color_at(&ray);
                 image.write_pixel(y, x, &color);
             }
+            pb.inc(1);
         }
+        pb.finish_with_message("Finished!");
         image
     }
 }
