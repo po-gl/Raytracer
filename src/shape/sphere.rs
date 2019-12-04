@@ -54,6 +54,10 @@ impl Shape for Sphere {
         self.id
     }
 
+    fn parent(&self) -> Option<Box<dyn Shape>> {
+        self.parent.clone()
+    }
+
     fn transform(&self) -> Matrix4 {
         self.transform
     }

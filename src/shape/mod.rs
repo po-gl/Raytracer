@@ -17,6 +17,7 @@ pub mod plane;
 pub mod cube;
 pub mod cylinder;
 pub mod cone;
+pub mod group;
 
 
 lazy_static! {
@@ -38,6 +39,8 @@ pub trait Shape: Any {
     fn shape_clone(&self) -> Box<dyn Shape>;
 
     fn id(&self) -> i32;
+
+    fn parent(&self) -> Option<Box<dyn Shape>>;
 
     fn transform(&self) -> Matrix4;
 
@@ -102,5 +105,11 @@ mod tests {
         let mut s = TestShape::new();
         s.material = m.clone();
         assert_eq!(s.material, m);
+    }
+
+    #[test]
+    fn shape_parent() {
+        let s = TestShape::new();
+        assert_eq!(s.parent, None);
     }
 }

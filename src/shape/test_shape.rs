@@ -14,6 +14,7 @@ use crate::tuple::{Tuple, vector};
 #[derive(Debug, PartialEq, Clone)]
 pub struct TestShape {
     pub id: i32,
+    pub parent: Option<Box<dyn Shape>>,
     pub transform: Matrix4,
     pub material: Material,
 }
@@ -21,12 +22,12 @@ pub struct TestShape {
 impl TestShape {
     pub fn new() -> TestShape {
         let id = shape::get_shape_id();
-        TestShape {id, transform: Matrix4::identity(), material: Material::new()}
+        TestShape {id, transform: Matrix4::identity(), material: Material::new(), parent: None}
     }
 
     pub fn new_with_material(material: Material) -> TestShape {
         let id = shape::get_shape_id();
-        TestShape {id, transform: Matrix4::identity(), material}
+        TestShape {id, transform: Matrix4::identity(), material, parent: None}
     }
 }
 
@@ -49,6 +50,10 @@ impl Shape for TestShape {
 
     fn id(&self) -> i32 {
         self.id
+    }
+
+    fn parent(&self) -> Option<Box<dyn Shape>> {
+        self.parent.clone()
     }
 
     fn transform(&self) -> Matrix4 {
