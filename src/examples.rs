@@ -8,13 +8,14 @@ use crate::color::Color;
 use std::f64::consts::PI;
 use crate::ray::Ray;
 use crate::shape::sphere::Sphere;
+use crate::shape;
 use crate::shape::Shape;
 use crate::intersection::{hit};
 use crate::tuple::{point, vector};
 use crate::material::Material;
 use crate::light;
 use crate::light::Light;
-use crate::transformation::{scaling, translation, rotation_y, rotation_x, view_transform};
+use crate::transformation::{scaling, translation, rotation_y, rotation_x, view_transform, rotation_z};
 use crate::float::Float;
 use crate::world::World;
 use crate::camera::Camera;
@@ -30,7 +31,178 @@ use crate::shape::cube::Cube;
 use crate::pattern::checker_pattern::CheckerPattern;
 use crate::shape::cylinder::Cylinder;
 use crate::shape::cone::Cone;
+use crate::shape::group::Group;
+use crate::shape::triangle::Triangle;
+use crate::file::obj_loader::Parser;
 
+//--------------------------------------------------
+//--------------------------------------------------
+
+
+pub fn draw_obj_scene() {
+    // Options
+    let canvas_width = 100;
+    let canvas_height = 100;
+    let fov = PI/3.0;
+
+    // Construct world
+    let mut world = World::new();
+
+    let mut floor = Plane::new();
+    floor.transform = scaling(10.0, 0.01, 10.0);
+    let mut material = Material::new();
+    material.reflective = Float(0.4);
+    let pattern_a = RingPattern::new(Color::from_hex("726DA8"), Color::from_hex("A0D2DB"));
+    let mut pattern = PerturbedPattern::new(Box::new(pattern_a), 0.15);
+    pattern.set_transform(rotation_y(PI/3.0) * scaling(0.1, 0.1, 0.1));
+    material.set_pattern(Box::new(pattern));
+    material.ambient = Float(0.15);
+    material.specular = Float(0.0);
+    floor.material = material;
+    world.objects.push(Box::new(floor));
+
+    let p1 = point(0.0, 1.0, 0.0);
+    let p2 = point(-1.0, 0.0, 0.0);
+    let p3 = point(1.0, 0.0, 0.0);
+    let mut tri = Triangle::new(p1, p2, p3);
+    tri.transform = translation(0.0, 0.0, 36.0) * scaling(6.0, 6.0, 6.0);
+    let mut material = Material::new();
+    material.color = Color::from_hex("FF0000");
+    tri.material = material;
+    world.objects.push(Box::new(tri));
+
+    let parser = Parser::parse_obj_file("Obj/deer.obj");
+    let mut group = parser.unwrap().default_group;
+    println!("Group count: {:?}", group.shapes.len());
+    group.transform = translation(0.0, 1.0, -2.0) * rotation_y(PI/6.0) * scaling(1.0, 1.0, 1.0);
+    let mut material = Material::new();
+    material.color = Color::from_hex("FF8800");
+    group.material = material;
+    world.objects.push(Box::new(group));
+
+
+    let light = Light::point_light(&point(-10.0, 16.0, -10.0), &Color::new(1.0, 1.0, 1.0));
+    world.lights.push(light);
+
+    // Create camera and render scene
+    let mut camera = Camera::new(canvas_width, canvas_height, fov);
+    camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
+
+    println!("Finished reading objects. Starting render.");
+    let canvas = camera.render(world);
+    file::write_to_file(canvas.to_ppm(), String::from("obj_scene.ppm"))
+}
+
+//--------------------------------------------------
+
+pub fn hexagon() -> Box<dyn Shape> {
+    let mut hex = Group::new();
+
+    for i in 0..5 {
+        let mut side = hexagon_side(Box::new(hex.clone()));
+        println!("Children: {:#?}", side);
+        println!();
+        side.set_transform(rotation_y(i as f64 * PI/3.0));
+        hex.add_child(&mut side)
+    }
+//    println!("Children: {:#?}", hex);
+    Box::new(hex)
+}
+
+pub fn hexagon_side(parent: Box<dyn Shape>) -> Box<dyn Shape> {
+    let mut side = Group::new();
+    side.add_child(&mut hexagon_corner(Box::new(side.clone())));
+    println!("  side1: {:#?}", side);
+    side.add_child(&mut hexagon_edge(Box::new(side.clone())));
+    println!("  side2: {:#?}", side);
+
+    Box::new(side).set_parent(parent)
+}
+
+pub fn hexagon_edge(parent: Box<dyn Shape>) -> Box<dyn Shape> {
+    let mut edge = Cylinder::new();
+    edge.minimum = 0.0;
+    edge.maximum = 0.0;
+    edge.transform = translation(0.0, 0.0, -1.0) *
+        rotation_y(-PI/6.0) *
+        rotation_z(-PI/2.0) *
+        scaling(0.25, 1.0, 0.25);
+
+    Box::new(edge).set_parent(parent)
+}
+
+pub fn hexagon_corner(parent: Box<dyn Shape>) -> Box<dyn Shape> {
+    let mut corner = Sphere::new();
+    corner.transform = translation(0.0, 0.0, -1.0) * scaling(0.25, 0.25, 0.25);
+
+    Box::new(corner).set_parent(parent)
+}
+
+pub fn draw_hexagon_scene() {
+    // Options
+    let canvas_width = 100;
+    let canvas_height = 100;
+    let fov = PI/3.0;
+
+    // Construct world
+    let mut world = World::new();
+
+    let mut floor = Plane::new();
+    floor.transform = scaling(10.0, 0.01, 10.0);
+    let mut material = Material::new();
+    material.reflective = Float(0.4);
+    let pattern_b = RingPattern::new(Color::from_hex("FFE4C6"), Color::from_hex("B5BD89"));
+//    let pattern_b = StripePattern::new(Color::from_hex("EFEF56"), Color::from_hex("FCEFEF"));
+    let mut pattern = PerturbedPattern::new(Box::new(pattern_b), 0.15);
+    pattern.set_transform(rotation_y(PI/3.0) * scaling(0.1, 0.1, 0.1));
+    material.set_pattern(Box::new(pattern));
+    material.ambient = Float(0.15);
+    material.specular = Float(0.0);
+    floor.material = material;
+    world.objects.push(Box::new(floor));
+
+    // Okay so nested groups are not working
+    // Properly right now
+    // I blame rust's lack of cyclic references
+//    let mut hexagon = hexagon();
+//    hexagon.set_transform(translation(0.0, 1.0, 0.0));
+////    let material = Material::mirror();
+//    let mut material = Material::new();
+//    material.color = Color::from_hex("729EA1");
+//    hexagon.set_material(material);
+//    world.objects.push(hexagon);
+
+    let mut s1: Box<dyn Shape> = Box::new(Sphere::new());
+    let mut s2: Box<dyn Shape> = Box::new(Sphere::new());
+    let mut s3: Box<dyn Shape> = Box::new(Sphere::new());
+
+    s1.set_transform(translation(1.5, 1.0, 0.0));
+    s2.set_transform(translation(0.0, 1.0, 0.0));
+    s3.set_transform(translation(-1.5, 1.0, 0.0));
+
+    let mut g = Group::new();
+    g.add_child(&mut s1);
+    g.add_child(&mut s2);
+    g.add_child(&mut s3);
+    world.objects.push(Box::new(g));
+
+//    world.objects.push(Box::new(s1));
+//    world.objects.push(Box::new(s2));
+//    world.objects.push(Box::new(s3));
+
+
+    let light = Light::point_light(&point(-10.0, 16.0, -10.0), &Color::new(1.0, 1.0, 1.0));
+    world.lights.push(light);
+
+    // Create camera and render scene
+    let mut camera = Camera::new(canvas_width, canvas_height, fov);
+    camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
+
+    let canvas = camera.render(world);
+    file::write_to_file(canvas.to_ppm(), String::from("hexagon_scene.ppm"))
+}
+
+//--------------------------------------------------
 
 pub fn draw_cone_scene() {
     // Options
@@ -278,8 +450,8 @@ pub fn draw_cylinder_scene() {
 
 pub fn draw_refracted_scene() {
     // Options
-    let canvas_width = 1000;
-    let canvas_height = 1000;
+    let canvas_width = 100;
+    let canvas_height = 100;
     let fov = PI/3.0;
 
     // Construct world
@@ -434,8 +606,8 @@ pub fn draw_reflected_scene() {
 
 pub fn draw_perturbed_patterned_scene() {
     // Options
-    let canvas_width = 600;
-    let canvas_height = 600;
+    let canvas_width = 100;
+    let canvas_height = 100;
     let fov = PI/3.0;
 
     // Construct world
@@ -804,7 +976,7 @@ pub fn draw_shaded_circle() {
             let hit = hit(xs);
             if hit != None {
                 let point = &ray.position(hit.as_ref().unwrap().t.value());
-                let normal = hit.as_ref().unwrap().object.normal_at(point);
+                let normal = shape::normal_at(hit.as_ref().unwrap().object.clone(), *point);
                 let eye = -&ray.direction;
                 let object = hit.as_ref().unwrap().object.clone();
 

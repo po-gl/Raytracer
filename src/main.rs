@@ -6,7 +6,6 @@
 extern crate num_traits;
 
 use std::env;
-use std::time::Instant;
 
 const FLOAT_THRESHOLD: f64 = 0.00001;
 
@@ -37,7 +36,6 @@ fn main() {
         example = &args[0]; // set to invalid example
     }
 
-    let start_time = Instant::now();
     match example.as_str() {
         "draw-arch" => {
             println!("Running Example \"{}\"", example);
@@ -99,9 +97,10 @@ fn main() {
             println!("Running Example \"{}\"", example);
             examples::draw_hexagon_scene();
         },
+        "draw-obj-scene" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_obj_scene();
+        },
         _ => println!("No valid argument.")
     }
-
-    let duration = start_time.elapsed();
-    println!("Program finished in {} seconds.", duration.as_secs());
 }
