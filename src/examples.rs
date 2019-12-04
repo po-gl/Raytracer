@@ -27,12 +27,176 @@ use crate::pattern::gradient_pattern::GradientPattern;
 use crate::pattern::blended_pattern::BlendedPattern;
 use crate::pattern::perturbed_pattern::PerturbedPattern;
 use crate::shape::cube::Cube;
+use crate::pattern::checker_pattern::CheckerPattern;
+use crate::shape::cylinder::Cylinder;
 
+
+pub fn draw_cylinder_refracted_scene() {
+    // Options
+    let canvas_width = 1000;
+    let canvas_height = 1000;
+    let fov = PI/4.0;
+
+    // Construct world
+    let mut world = World::new();
+
+    let mut floor = Plane::new();
+    floor.transform = scaling(10.0, 0.01, 10.0);
+    let mut material = Material::new();
+    material.reflective = Float(0.4);
+    let pattern_b = RingPattern::new(Color::from_hex("FFE4C6"), Color::from_hex("B5BD89"));
+    let mut pattern = PerturbedPattern::new(Box::new(pattern_b), 0.15);
+    pattern.set_transform(transformation::scaling(0.1, 0.1, 0.1));
+    material.set_pattern(Box::new(pattern));
+    material.specular = Float(0.0);
+    floor.material = material;
+    world.objects.push(Box::new(floor));
+
+    let mut middle_cylinder = Cylinder::new_bounded(0.0, 3.0);
+    middle_cylinder.closed = true;
+//    middle_cylinder.transform = scaling(0.7, 1.0, 0.7);
+    let material = Material::glass();
+//    let mut material = Material::new();
+//    material.color = Color::from_hex("729EA1");
+    middle_cylinder.material = material;
+    world.objects.push(Box::new(middle_cylinder));
+
+    let colors = vec![
+        Color::from_hex("FF0000"),
+        Color::from_hex("FF00FF"),
+        Color::from_hex("0000FF"),
+        Color::from_hex("00cc00"),
+    ];
+    for i in 0..colors.len() {
+        let mut cylinder = Cylinder::new_bounded(0.0, 2.0);
+        cylinder.closed = true;
+        cylinder.transform = rotation_y(PI - PI/6.0 * i as f64) * translation(0.0, 0.0, -3.0) * scaling(0.4, 1.0, 0.4);
+//        let material = Material::mirror();
+        let mut material = Material::new();
+        material.color = colors[i];
+        cylinder.material = material;
+        world.objects.push(Box::new(cylinder));
+
+        let mut glass_sphere = Sphere::new();
+        glass_sphere.transform = rotation_y(PI - PI/6.0 * i as f64) * translation(0.0, 2.5, -3.0) * scaling(0.2, 0.2, 0.2);
+        let material = Material::glass();
+        glass_sphere.material = material;
+        world.objects.push(Box::new(glass_sphere));
+    }
+
+    let colors = vec![
+        Color::from_hex("FCEFEF"),
+        Color::from_hex("7FD8BE"),
+        Color::from_hex("A1FCDF"),
+        Color::from_hex("FCD29F"),
+    ];
+    for i in 0..colors.len() {
+        let mut cylinder = Cylinder::new_bounded(0.0, 0.4);
+        let height = (i as f64 + 1.0) * 0.44;
+        let width =  (i as f64 + 1.0) * -0.4;
+        cylinder.transform = rotation_y(-PI/9.0) * translation(0.0, 0.0, -3.5) * scaling(2.0 + width, 1.0 + height, 2.0 + width);
+//        cylinder.transform = rotation_y(PI/6.0 * i as f64) * translation(0.0, 0.0, -3.0) * scaling(0.4, 1.0, 0.4);
+//        cylinder.transform = rotation_y(PI/3.0) * translation(0.0, 0.0, -3.5) * scaling(2.0, 1.0, 2.0);
+//        let material = Material::mirror();
+        let mut material = Material::new();
+        material.color = colors[i];
+
+        if i == colors.len()-1 {
+            cylinder.closed = true;
+            material.shininess = Float(300.0);
+            material.reflective = Float(0.9)
+        }
+
+        cylinder.material = material;
+        world.objects.push(Box::new(cylinder));
+    }
+
+    let light = Light::point_light(&point(-10.0, 16.0, -10.0), &Color::new(1.0, 1.0, 1.0));
+    world.lights.push(light);
+
+    // Create camera and render scene
+    let mut camera = Camera::new(canvas_width, canvas_height, fov);
+//    camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
+    camera.transform = view_transform(point(0.0, 5.0, -10.0), point(0.0, 0.0, 0.0), vector(0.0, 1.0, 0.0));
+
+    let canvas = camera.render(world);
+    file::write_to_file(canvas.to_ppm(), String::from("cylinder_refracted_scene.ppm"))
+}
+
+//--------------------------------------------------
+
+pub fn draw_cylinder_scene() {
+    // Options
+    let canvas_width = 1000;
+    let canvas_height = 1000;
+    let fov = PI/3.0;
+
+    // Construct world
+    let mut world = World::new();
+
+    let mut floor = Plane::new();
+    floor.transform = scaling(10.0, 0.01, 10.0);
+    let mut material = Material::new();
+    material.reflective = Float(0.4);
+    let pattern_b = RingPattern::new(Color::from_hex("FFE4C6"), Color::from_hex("B5BD89"));
+    let mut pattern = PerturbedPattern::new(Box::new(pattern_b), 0.15);
+    pattern.set_transform(transformation::scaling(0.1, 0.1, 0.1));
+    material.set_pattern(Box::new(pattern));
+    material.specular = Float(0.0);
+    floor.material = material;
+    world.objects.push(Box::new(floor));
+
+    let mut middle_cylinder = Cylinder::new_bounded(0.0, 3.0);
+    middle_cylinder.closed = true;
+//    middle_cylinder.transform = scaling(0.7, 1.0, 0.7);
+    let material = Material::mirror();
+//    let mut material = Material::new();
+//    material.color = Color::from_hex("729EA1");
+    middle_cylinder.material = material;
+    world.objects.push(Box::new(middle_cylinder));
+
+    let colors = vec![
+        Color::from_hex("FF0000"),
+        Color::from_hex("FF00FF"),
+        Color::from_hex("0000FF"),
+        Color::from_hex("00cc00"),
+    ];
+    for i in 0..colors.len() {
+        let mut cylinder = Cylinder::new_bounded(0.0, 2.0);
+        cylinder.closed = true;
+        cylinder.transform = rotation_y(PI/6.0 * i as f64) * translation(0.0, 0.0, -3.0) * scaling(0.4, 1.0, 0.4);
+//        let material = Material::mirror();
+        let mut material = Material::new();
+        material.color = colors[i];
+        cylinder.material = material;
+        world.objects.push(Box::new(cylinder));
+
+        let mut glass_sphere = Sphere::new();
+        glass_sphere.transform = rotation_y(PI/6.0 * i as f64) * translation(0.0, 2.5, -3.0) * scaling(0.2, 0.2, 0.2);
+        let material = Material::glass();
+        glass_sphere.material = material;
+        world.objects.push(Box::new(glass_sphere));
+    }
+
+
+    let light = Light::point_light(&point(-10.0, 16.0, -10.0), &Color::new(1.0, 1.0, 1.0));
+    world.lights.push(light);
+
+    // Create camera and render scene
+    let mut camera = Camera::new(canvas_width, canvas_height, fov);
+//    camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
+    camera.transform = view_transform(point(0.0, 4.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
+
+    let canvas = camera.render(world);
+    file::write_to_file(canvas.to_ppm(), String::from("cylinder_scene.ppm"))
+}
+
+//--------------------------------------------------
 
 pub fn draw_refracted_scene() {
     // Options
-    let canvas_width = 600;
-    let canvas_height = 600;
+    let canvas_width = 1000;
+    let canvas_height = 1000;
     let fov = PI/3.0;
 
     // Construct world
@@ -268,7 +432,7 @@ pub fn draw_blended_patterned_scene() {
     floor.transform = scaling(10.0, 0.01, 10.0);
     let mut material = Material::new();
     let pattern_a = RingPattern::new(Color::from_hex("FF0000"), Color::black());
-    let pattern_b = StripePattern::new(Color::from_hex("0000FF"), Color::black());
+    let pattern_b = CheckerPattern::new(Color::from_hex("0000FF"), Color::black());
     let mut pattern = BlendedPattern::new(Box::new(pattern_a), Box::new(pattern_b));
     pattern.set_transform(transformation::scaling(0.1, 0.1, 0.1));
     material.set_pattern(Box::new(pattern));

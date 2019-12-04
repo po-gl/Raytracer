@@ -83,6 +83,14 @@ fn main() {
             println!("Running Example \"{}\"", example);
             examples::draw_refracted_scene();
         },
+        "draw-cylinder-scene" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_cylinder_scene();
+        },
+        "draw-cylinder-refracted-scene" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_cylinder_refracted_scene();
+        },
         _ => println!("No valid argument.")
     }
 
