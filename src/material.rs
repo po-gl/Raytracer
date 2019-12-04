@@ -49,6 +49,19 @@ impl Material {
             pattern: None}
     }
 
+    pub fn mirror() -> Material {
+        Material {color: Color::new(0.9, 0.9, 1.0),
+            ambient: Float(0.1),
+            diffuse: Float(0.1),
+            specular: Float(0.2),
+            shininess: Float(400.0),
+            reflective: Float(1.0),
+            transparency: Float(0.0),
+            refractive_index: Float(1.0),
+            pattern: None}
+    }
+
+
     // Common material values
 
     pub fn water_refractive_index() -> Float {
