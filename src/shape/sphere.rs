@@ -17,6 +17,7 @@ use std::fmt::{Formatter, Error};
 #[derive(Debug, PartialEq, Clone)]
 pub struct Sphere {
     pub id: i32,
+    pub parent: Option<Box<dyn Shape>>,
     pub transform: Matrix4,
     pub material: Material,
 }
@@ -24,18 +25,22 @@ pub struct Sphere {
 impl Sphere {
     pub fn new() -> Sphere {
         let id = shape::get_shape_id();
-        Sphere {id, transform: Matrix4::identity(), material: Material::new()}
+        Sphere {id, parent: None, transform: Matrix4::identity(), material: Material::new()}
     }
 
     pub fn new_with_material(material: Material) -> Sphere {
         let id = shape::get_shape_id();
-        Sphere{id, transform: Matrix4::identity(), material}
+        Sphere{id, parent: None, transform: Matrix4::identity(), material}
     }
 }
 
 impl Shape for Sphere {
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn as_shape(&self) -> Box<&dyn Shape> {
+        Box::new(self)
     }
 
     fn box_eq(&self, other: &dyn Any) -> bool {
@@ -56,6 +61,10 @@ impl Shape for Sphere {
 
     fn parent(&self) -> Option<Box<dyn Shape>> {
         self.parent.clone()
+    }
+
+    fn set_parent(&mut self, parent: Box<dyn Shape>) {
+        self.parent = Some(parent);
     }
 
     fn transform(&self) -> Matrix4 {

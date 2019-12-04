@@ -15,6 +15,7 @@ use crate::float::Float;
 #[derive(Debug, PartialEq, Clone)]
 pub struct Plane {
     pub id: i32,
+    pub parent: Option<Box<dyn Shape>>,
     pub transform: Matrix4,
     pub material: Material,
 }
@@ -22,18 +23,22 @@ pub struct Plane {
 impl Plane {
     pub fn new() -> Plane {
         let id = shape::get_shape_id();
-        Plane {id, transform: Matrix4::identity(), material: Material::new()}
+        Plane {id, parent: None, transform: Matrix4::identity(), material: Material::new()}
     }
 
     pub fn new_with_material(material: Material) -> Plane {
         let id = shape::get_shape_id();
-        Plane {id, transform: Matrix4::identity(), material}
+        Plane {id, parent: None, transform: Matrix4::identity(), material}
     }
 }
 
 impl Shape for Plane {
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn as_shape(&self) -> Box<&dyn Shape> {
+        Box::new(self)
     }
 
     fn box_eq(&self, other: &dyn Any) -> bool {
@@ -54,6 +59,10 @@ impl Shape for Plane {
 
     fn parent(&self) -> Option<Box<dyn Shape>> {
         self.parent.clone()
+    }
+
+    fn set_parent(&mut self, parent: Box<dyn Shape>) {
+        self.parent = Some(parent);
     }
 
     fn transform(&self) -> Matrix4 {

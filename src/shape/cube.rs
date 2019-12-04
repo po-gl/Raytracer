@@ -16,6 +16,7 @@ use num_traits::float::Float as NumFloat;
 #[derive(Debug, PartialEq, Clone)]
 pub struct Cube {
     pub id: i32,
+    pub parent: Option<Box<dyn Shape>>,
     pub transform: Matrix4,
     pub material: Material,
 }
@@ -23,18 +24,22 @@ pub struct Cube {
 impl Cube {
     pub fn new() -> Cube {
         let id = shape::get_shape_id();
-        Cube {id, transform: Matrix4::identity(), material: Material::new()}
+        Cube {id, parent: None, transform: Matrix4::identity(), material: Material::new()}
     }
 
     pub fn new_with_material(material: Material) -> Cube {
         let id = shape::get_shape_id();
-        Cube{id, transform: Matrix4::identity(), material}
+        Cube{id, parent: None, transform: Matrix4::identity(), material}
     }
 }
 
 impl Shape for Cube {
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn as_shape(&self) -> Box<&dyn Shape> {
+        Box::new(self)
     }
 
     fn box_eq(&self, other: &dyn Any) -> bool {
@@ -55,6 +60,10 @@ impl Shape for Cube {
 
     fn parent(&self) -> Option<Box<dyn Shape>> {
         self.parent.clone()
+    }
+
+    fn set_parent(&mut self, parent: Box<dyn Shape>) {
+        self.parent = Some(parent);
     }
 
     fn transform(&self) -> Matrix4 {

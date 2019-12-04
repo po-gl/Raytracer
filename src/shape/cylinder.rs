@@ -16,6 +16,7 @@ use num_traits::float::Float as NumFloat;
 #[derive(Debug, PartialEq, Clone)]
 pub struct Cylinder {
     pub id: i32,
+    pub parent: Option<Box<dyn Shape>>,
     pub transform: Matrix4,
     pub material: Material,
     pub minimum: f64,
@@ -26,17 +27,17 @@ pub struct Cylinder {
 impl Cylinder {
     pub fn new() -> Cylinder {
         let id = shape::get_shape_id();
-        Cylinder {id, transform: Matrix4::identity(), material: Material::new(), minimum: NumFloat::neg_infinity(), maximum: NumFloat::infinity(), closed: false}
+        Cylinder {id, parent: None, transform: Matrix4::identity(), material: Material::new(), minimum: NumFloat::neg_infinity(), maximum: NumFloat::infinity(), closed: false}
     }
 
     pub fn new_with_material(material: Material) -> Cylinder {
         let id = shape::get_shape_id();
-        Cylinder{id, transform: Matrix4::identity(), material, minimum: NumFloat::neg_infinity(), maximum: NumFloat::infinity(), closed: false}
+        Cylinder{id, parent: None, transform: Matrix4::identity(), material, minimum: NumFloat::neg_infinity(), maximum: NumFloat::infinity(), closed: false}
     }
 
     pub fn new_bounded(minimum: f64, maximum: f64) -> Cylinder {
         let id = shape::get_shape_id();
-        Cylinder {id, transform: Matrix4::identity(), material: Material::new(), minimum, maximum, closed: false}
+        Cylinder {id, parent: None, transform: Matrix4::identity(), material: Material::new(), minimum, maximum, closed: false}
     }
 
     /// Check if the intersection at t is within a radius of 1 from the y axis
@@ -70,6 +71,10 @@ impl Shape for Cylinder {
         self
     }
 
+    fn as_shape(&self) -> Box<&dyn Shape> {
+        Box::new(self)
+    }
+
     fn box_eq(&self, other: &dyn Any) -> bool {
         other.downcast_ref::<Self>().map_or(false, |a| self == a)
     }
@@ -88,6 +93,10 @@ impl Shape for Cylinder {
 
     fn parent(&self) -> Option<Box<dyn Shape>> {
         self.parent.clone()
+    }
+
+    fn set_parent(&mut self, parent: Box<dyn Shape>) {
+        self.parent = Some(parent);
     }
 
     fn transform(&self) -> Matrix4 {

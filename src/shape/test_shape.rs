@@ -22,18 +22,22 @@ pub struct TestShape {
 impl TestShape {
     pub fn new() -> TestShape {
         let id = shape::get_shape_id();
-        TestShape {id, transform: Matrix4::identity(), material: Material::new(), parent: None}
+        TestShape {id, parent: None, transform: Matrix4::identity(), material: Material::new()}
     }
 
     pub fn new_with_material(material: Material) -> TestShape {
         let id = shape::get_shape_id();
-        TestShape {id, transform: Matrix4::identity(), material, parent: None}
+        TestShape {id, parent: None, transform: Matrix4::identity(), material}
     }
 }
 
 impl Shape for TestShape {
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn as_shape(&self) -> Box<&dyn Shape> {
+        Box::new(self)
     }
 
     fn box_eq(&self, other: &dyn Any) -> bool {
@@ -54,6 +58,10 @@ impl Shape for TestShape {
 
     fn parent(&self) -> Option<Box<dyn Shape>> {
         self.parent.clone()
+    }
+
+    fn set_parent(&mut self, parent: Box<dyn Shape>) {
+        self.parent = Some(parent);
     }
 
     fn transform(&self) -> Matrix4 {
