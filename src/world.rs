@@ -7,7 +7,7 @@ use crate::shape::sphere::Sphere;
 use crate::material::Material;
 use crate::color::Color;
 use crate::float::Float;
-use crate::{transformation, light, intersection, tuple};
+use crate::{transformation, intersection, tuple};
 use crate::tuple::{point, Tuple};
 use crate::ray::Ray;
 use crate::intersection::{Intersection, PrecomputedData, schlick};
@@ -98,7 +98,8 @@ impl World {
         let reflected = self.reflected_color_impl(comps.clone(), remaining, shape_list);
         let refracted = self.refracted_color_impl(comps.clone(), remaining, shape_list);
 
-        let surface = light::lighting(&comps.object.material(), Some(comps.object.clone()), &self.lights[0], &comps.point, &comps.eyev, &comps.normalv, is_shadowed);
+        let surface = Light::lighting(&comps.object.material(), Some(comps.object.clone()), Some(self),
+                                      &self.lights[0], &comps.point, Some(&comps.over_point), &comps.eyev, &comps.normalv, is_shadowed, Some(shape_list));
 
         let material = comps.object.material();
         if material.reflective > Float(0.0) && material.transparency > Float(0.0) {

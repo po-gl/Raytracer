@@ -15,7 +15,8 @@ impl Ray {
     ///
     /// origin is a point and direction is a vector
     pub fn new(origin: Tuple, direction: Tuple) -> Ray {
-        assert!(origin.is_point() && direction.is_vector());
+        assert!(origin.is_point());
+        assert!(direction.is_vector());
         Ray {origin, direction}
     }
 

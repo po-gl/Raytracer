@@ -13,7 +13,6 @@ use crate::shape::Shape;
 use crate::intersection::{hit};
 use crate::tuple::{point, vector};
 use crate::material::Material;
-use crate::light;
 use crate::light::Light;
 use crate::transformation::{scaling, translation, rotation_y, rotation_x, view_transform};
 use crate::float::Float;
@@ -36,10 +35,71 @@ use crate::shape::triangle::Triangle;
 use crate::file::obj_loader::Parser;
 use crate::shape::shape_list::ShapeList;
 use crate::shape::csg::CSG;
+use rand::Rng;
 
 //--------------------------------------------------
 //--------------------------------------------------
 
+
+pub fn draw_soft_shadow_scene() {
+    // Options
+    let canvas_width = 500;
+    let canvas_height = 500;
+    let fov = PI/3.0;
+
+    // Construct world
+    let mut world = World::new();
+    let shape_list = &mut ShapeList::new();
+
+    let mut floor = Plane::new(shape_list);
+    floor.transform = scaling(10.0, 0.01, 10.0);
+    let mut material = Material::new();
+    material.reflective = Float(0.4);
+    material.ambient = Float(0.15);
+    material.specular = Float(0.0);
+    floor.material = material;
+    shape_list.update(Box::new(floor.clone()));
+    world.objects.push(Box::new(floor));
+
+
+    let mut s1 = Sphere::new(shape_list);
+    let mut material = Material::new();
+    material.color = Color::from_hex("0000FF");
+//    material.normal_perturb = Some(String::from("sin_y"));
+//    material.normal_perturb_factor = Some(20.0);
+    s1.set_transform(translation(0.0, 1.0, 0.0), shape_list);
+    s1.set_material(material, shape_list);
+    world.objects.push(Box::new(s1));
+
+    let mut s2 = Sphere::new(shape_list);
+    s2.set_transform(translation(0.5, 0.9, -1.4) * scaling(0.2, 0.2, 0.2), shape_list);
+    let mut material = Material::new();
+    material.color = Color::from_hex("FF0000");
+    s2.set_material(material, shape_list);
+    world.objects.push(Box::new(s2));
+
+    let mut c1 = Cube::new(shape_list);
+    c1.set_transform(translation(0.5, 0.3, -1.4) * scaling(0.02, 0.5, 0.02), shape_list);
+    let mut material = Material::new();
+    material.color = Color::from_hex("445544");
+    c1.set_material(material, shape_list);
+    world.objects.push(Box::new(c1));
+
+
+//    let light = Light::area_light(&point(-2.5, 4.6, -2.5), &Color::new(1.0, 1.0, 1.0), 0.5);
+    let light = Light::point_light(&point(-2.5, 4.6, -2.5), &Color::new(1.0, 1.0, 1.0));
+    world.lights.push(light);
+
+    // Create camera and render scene
+    let mut camera = Camera::new(canvas_width, canvas_height, fov);
+    camera.transform = view_transform(point(0.4, 2.0, -3.0), point(0.4, 1.0, -0.7), vector(0.0, 1.0, 0.0));
+
+    let canvas = camera.render(world, shape_list);
+    file::write_to_file(canvas.to_ppm(), String::from("soft_shadows_scene.ppm"))
+}
+
+
+//--------------------------------------------------
 
 pub fn draw_csg_scene() {
     // Options
@@ -67,8 +127,8 @@ pub fn draw_csg_scene() {
 
 
     let mut s1 = Cube::new(shape_list);
-    let mut material = Material::new();
-    material.color = Color::from_hex("0000FF");
+    let mut material = Material::glass();
+    material.color = Color::from_hex("FFFFFF");
     s1.set_material(material, shape_list);
 
     let mut s2 = Sphere::new(shape_list);
@@ -1064,12 +1124,71 @@ pub fn draw_shaded_circle() {
                 let eye = -&ray.direction;
                 let object = hit.as_ref().unwrap().object.clone();
 
-                let color = light::lighting(&object.material(), Some(object), &light, point, &eye, &normal, false);
+                let color = Light::lighting(&object.material(), Some(object), None, &light, point, None, &eye, &normal, false, None);
                 canvas.write_pixel(x, y, &color);
             }
         }
     }
     file::write_to_file(canvas.to_ppm(), String::from("shaded_circle.ppm"))
+}
+//--------------------------------------------------
+
+pub fn draw_uniform_rand_circle() {
+    // Something similar could be used to create
+    // soft shadows
+
+    let mut shape_list = ShapeList::new();
+    let color = Color::new(1.0, 0.6, 0.1);
+    let center_color = Color::from_hex("00FF00");
+    let shape = Sphere::new(&mut shape_list);
+//    shape.set_transform(transformation::scaling(0.5, 1.0, 1.0));
+    let canvas_pixels = 500;
+
+    let ray_count = 10000;
+    let ray_shot_radius = canvas_pixels as f64 * 0.5;
+
+    let wall_z = 10.0;
+    let wall_size = 7.0;
+
+    let pixel_size = wall_size / canvas_pixels as f64;
+    let half = wall_size / 2.0;
+    let center = canvas_pixels as f64 / 2.0;
+
+    let ray_origin = point(0.0, 0.0, -5.0);
+    let canvas = &mut Canvas::new(canvas_pixels, canvas_pixels);
+
+    let mut rng = rand::thread_rng();
+
+    // Color center
+    canvas.write_pixel(center as i32, center as i32, &center_color);
+
+    // Each row of pixels
+    for _ in 0..ray_count {
+
+        let a = rng.gen::<f64>() * 2.0 * PI;
+        let r = 1.0 * rng.gen::<f64>().sqrt();
+        let x = r * a.cos();
+        let y = r * a.sin();
+
+        let x_scale = x * ray_shot_radius;
+        let y_scale = y * ray_shot_radius;
+
+        let x_pix = center + x_scale;
+        let y_pix = center + y_scale;
+
+        let world_x = -half + pixel_size * x_pix;
+        let world_y = half - pixel_size * y_pix;
+
+        let position = point(world_x, world_y, wall_z);
+
+        let ray = Ray::new(ray_origin, (position - ray_origin).normalize());
+        let xs = shape.intersects(&ray, &mut shape_list);
+
+        if hit(xs) != None {
+            canvas.write_pixel(x_pix as i32, y_pix as i32, &color);
+        }
+    }
+    file::write_to_file(canvas.to_ppm(), String::from("circle_rand.ppm"))
 }
 
 //--------------------------------------------------

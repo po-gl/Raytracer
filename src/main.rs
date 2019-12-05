@@ -18,6 +18,7 @@ pub mod intersection;
 pub mod color;
 pub mod material;
 pub mod pattern;
+pub mod normal_perturber;
 pub mod shape;
 pub mod light;
 pub mod world;
@@ -48,6 +49,10 @@ fn main() {
         "draw-circle" => {
             println!("Running Example \"{}\"", example);
             examples::draw_circle();
+        },
+        "draw-rand-circle" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_uniform_rand_circle();
         },
         "draw-shaded-circle" => {
             println!("Running Example \"{}\"", example);
@@ -104,6 +109,10 @@ fn main() {
         "draw-csg-scene" => {
             println!("Running Example \"{}\"", example);
             examples::draw_csg_scene();
+        },
+        "draw-soft-shadows-scene" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_soft_shadow_scene();
         },
         _ => println!("No valid argument.")
     }
