@@ -36,15 +36,160 @@ use crate::file::obj_loader::Parser;
 use crate::shape::shape_list::ShapeList;
 use crate::shape::csg::CSG;
 use rand::Rng;
+use crate::matrix::Matrix4;
 
 //--------------------------------------------------
+//--------------------------------------------------
+
+
+pub fn fractal(material: Material, recursion_depth: i32, shape_list: &mut ShapeList) -> Box<dyn Shape> {
+    let mut group = Group::new(shape_list);
+
+    // main sphere
+    let mut new_sphere: Box<dyn Shape> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
+    group.add_child(&mut new_sphere, shape_list);
+
+    fractal_node(&mut group, Matrix4::identity(), &material, recursion_depth, shape_list);
+
+
+    Box::new(group)
+}
+
+pub fn fractal_node(node_group: &mut Group, transform: Matrix4, material: &Material,
+                    remaining: i32, shape_list: &mut ShapeList) {
+    if remaining <= 0 {
+        return
+    }
+    let scale = 0.4;
+
+    let current_width = 1.0 * scale;
+
+    // Create 6 spheres
+    // Top
+    let mut new_sphere: Box<dyn Shape> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
+    let new_transform = transform * translation(0.0, 1.0 + current_width, 0.0) * scaling(current_width, current_width, current_width);
+    new_sphere.set_transform(new_transform, shape_list);
+    node_group.add_child(&mut new_sphere, shape_list);
+
+    fractal_node(node_group, new_transform, material, remaining-1, shape_list);
+
+    // Bottom
+    let mut new_sphere: Box<dyn Shape> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
+    let new_transform = transform * translation(0.0, -(1.0 + current_width), 0.0) * scaling(current_width, current_width, current_width);
+    new_sphere.set_transform(new_transform, shape_list);
+    node_group.add_child(&mut new_sphere, shape_list);
+
+    fractal_node(node_group, new_transform, material, remaining-1, shape_list);
+
+    // Left
+    let mut new_sphere: Box<dyn Shape> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
+    let new_transform = transform * translation(-(1.0 + current_width), 0.0, 0.0) * scaling(current_width, current_width, current_width);
+    new_sphere.set_transform(new_transform, shape_list);
+    node_group.add_child(&mut new_sphere, shape_list);
+
+    fractal_node(node_group, new_transform, material, remaining-1, shape_list);
+
+    // Right
+    let mut new_sphere: Box<dyn Shape> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
+    let new_transform = transform * translation(1.0 + current_width, 0.0, 0.0) * scaling(current_width, current_width, current_width);
+    new_sphere.set_transform(new_transform, shape_list);
+    node_group.add_child(&mut new_sphere, shape_list);
+
+    fractal_node(node_group, new_transform, material, remaining-1, shape_list);
+
+    // Forwards
+    let mut new_sphere: Box<dyn Shape> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
+    let new_transform = transform * translation(0.0, 0.0, -(1.0 + current_width)) * scaling(current_width, current_width, current_width);
+    new_sphere.set_transform(new_transform, shape_list);
+    node_group.add_child(&mut new_sphere, shape_list);
+
+    fractal_node(node_group, new_transform, material, remaining-1, shape_list);
+
+    // Backwards
+    let mut new_sphere: Box<dyn Shape> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
+    let new_transform = transform * translation(0.0, 0.0, 1.0 + current_width) * scaling(current_width, current_width, current_width);
+    new_sphere.set_transform(new_transform, shape_list);
+    node_group.add_child(&mut new_sphere, shape_list);
+
+    fractal_node(node_group, new_transform, material, remaining-1, shape_list);
+}
+
+
+
+pub fn draw_fractal_scene() {
+    // Options
+    let canvas_width = 70;
+    let canvas_height = 70;
+    let fov = PI/3.0;
+
+    // Construct world
+    let mut world = World::new();
+    let shape_list = &mut ShapeList::new();
+
+    let mut floor = Plane::new(shape_list);
+    floor.transform = scaling(10.0, 0.01, 10.0);
+    let mut material = Material::new();
+//    material.reflective = Float(0.4);
+    material.ambient = Float(0.15);
+    material.specular = Float(0.0);
+    let pattern_a = RingPattern::new(Color::from_hex("726DA8"), Color::from_hex("A0D2DB"));
+    let mut pattern = PerturbedPattern::new(Box::new(pattern_a), 0.15);
+    pattern.set_transform(rotation_y(PI/3.0) * scaling(0.1, 0.1, 0.1));
+    material.set_pattern(Box::new(pattern));
+    floor.material = material;
+    shape_list.update(Box::new(floor.clone()));
+    world.objects.push(Box::new(floor));
+
+//    let prev = 0.4;
+//    let current = 0.16;
+//    let offset = 1.4;
+
+    let scale = 0.4;
+    let current = 1.0 * scale;
+    let trans = translation(0.0, 1.0 + current, 0.0) * scaling(current, current, current);
+
+    let mut s1 = Sphere::new(shape_list);
+    let mut material = Material::new();
+    material.color = Color::from_hex("0000FF");
+//    material.normal_perturb = Some(String::from("sin_y"));
+//    material.normal_perturb_factor = Some(20.0);
+    s1.set_transform( trans * translation(-(1.0 + current), 0.0, 0.0) * scaling(current, current, current), shape_list);
+//    s1.set_transform(scaling(0.5, 0.5, 0.5) * translation(0.0, 1.0, 0.0), shape_list);
+//    s1.set_transform(translation(0.0, 1.0, 0.0) * scaling(0.5, 0.5, 0.5), shape_list);
+    s1.set_material(material, shape_list);
+//    world.objects.push(Box::new(s1));
+
+    let mut material = Material::new();
+    material.color = Color::from_hex("FF0000");
+//    material.transparency = Float(0.8);
+
+    let mut fractal = fractal(material, 2, shape_list);
+    fractal.set_transform(translation(0.0, 0.0, 0.0), shape_list);
+
+    world.objects.push(fractal);
+
+
+//    let light = Light::area_light(&point(-2.5, 4.6, -2.5), &Color::new(1.0, 1.0, 1.0), 0.5);
+    let light = Light::point_light(&point(-2.5, 4.6, -2.5), &Color::new(1.0, 1.0, 1.0));
+    world.lights.push(light);
+
+    // Create camera and render scene
+    let mut camera = Camera::new(canvas_width, canvas_height, fov);
+//    camera.transform = view_transform(point(0.7, 4.5, -3.5), point(0.4, 2.0, -0.7), vector(0.0, 1.0, 0.0));
+    camera.transform = view_transform(point(0.0, 2.0, -2.0), point(0.0, 1.0, 0.0), vector(0.0, 2.0, 0.0));
+
+    let canvas = camera.render(world, shape_list);
+    file::write_to_file(canvas.to_ppm(), String::from("fractal.ppm"))
+}
+
+
 //--------------------------------------------------
 
 
 pub fn draw_soft_shadow_scene() {
     // Options
-    let canvas_width = 500;
-    let canvas_height = 500;
+    let canvas_width = 200;
+    let canvas_height = 200;
     let fov = PI/3.0;
 
     // Construct world
@@ -86,8 +231,8 @@ pub fn draw_soft_shadow_scene() {
     world.objects.push(Box::new(c1));
 
 
-//    let light = Light::area_light(&point(-2.5, 4.6, -2.5), &Color::new(1.0, 1.0, 1.0), 0.5);
-    let light = Light::point_light(&point(-2.5, 4.6, -2.5), &Color::new(1.0, 1.0, 1.0));
+    let light = Light::area_light(&point(-2.5, 4.6, -2.5), &Color::new(1.0, 1.0, 1.0), 0.5);
+//    let light = Light::point_light(&point(-2.5, 4.6, -2.5), &Color::new(1.0, 1.0, 1.0));
     world.lights.push(light);
 
     // Create camera and render scene
