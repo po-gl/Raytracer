@@ -13,6 +13,7 @@ use std::any::Any;
 use std::fmt::{Formatter, Error};
 use num_traits::float::Float as NumFloat;
 use crate::shape::shape_list::ShapeList;
+use crate::normal_perturber::NormalPerturber;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Cone {
@@ -202,15 +203,33 @@ impl Shape for Cone {
         let distance = point.x * point.x + point.z * point.z;
 
         if distance < Float(1.0) && point.y >= Float(self.maximum) - FLOAT_THRESHOLD {
-            return vector(0.0, 1.0, 0.0) // Top cap
+            let mut normal = vector(0.0, 1.0, 0.0); // Top cap
+            if self.material.normal_perturb.is_some() {
+                let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
+                                                              point, self.material.normal_perturb_factor);
+                normal = normal + perturb;
+            }
+            normal
         } else if distance < Float(1.0) && point.y <= Float(self.minimum) + FLOAT_THRESHOLD {
-            return vector(0.0, -1.0, 0.0) // Bottom cap
+            let mut normal =  vector(0.0, -1.0, 0.0); // Bottom cap
+            if self.material.normal_perturb.is_some() {
+                let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
+                                                              point, self.material.normal_perturb_factor);
+                normal = normal + perturb;
+            }
+            normal
         } else {
             let mut y = (point.x * point.x + point.z * point.z).value().sqrt();
             if point.y > Float(0.0) {
                 y = -y;
             }
-            return vector(point.x.value(), y, point.z.value())
+            let mut normal = vector(point.x.value(), y, point.z.value());
+            if self.material.normal_perturb.is_some() {
+                let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
+                                                              point, self.material.normal_perturb_factor);
+                normal = normal + perturb;
+            }
+            normal
         }
     }
 }

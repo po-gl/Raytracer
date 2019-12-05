@@ -13,6 +13,7 @@ use std::any::Any;
 use std::fmt::{Formatter, Error};
 use num_traits::float::Float as NumFloat;
 use crate::shape::shape_list::ShapeList;
+use crate::normal_perturber::NormalPerturber;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Cylinder {
@@ -186,11 +187,29 @@ impl Shape for Cylinder {
         let distance = point.x * point.x + point.z * point.z;
 
         if distance < Float(1.0) && point.y >= Float(self.maximum) - FLOAT_THRESHOLD {
-            return vector(0.0, 1.0, 0.0) // Top cap
+            let mut normal = vector(0.0, 1.0, 0.0); // Top cap
+            if self.material.normal_perturb.is_some() {
+                let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
+                                                              point, self.material.normal_perturb_factor);
+                normal = normal + perturb;
+            }
+            normal
         } else if distance < Float(1.0) && point.y <= Float(self.minimum) + FLOAT_THRESHOLD {
-            return vector(0.0, -1.0, 0.0) // Bottom cap
+            let mut normal =  vector(0.0, -1.0, 0.0); // Bottom cap
+            if self.material.normal_perturb.is_some() {
+                let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
+                                                              point, self.material.normal_perturb_factor);
+                normal = normal + perturb;
+            }
+            normal
         } else {
-            return vector(point.x.value(), 0.0, point.z.value())
+            let mut normal = vector(point.x.value(), 0.0, point.z.value());
+            if self.material.normal_perturb.is_some() {
+                let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
+                                                              point, self.material.normal_perturb_factor);
+                normal = normal + perturb;
+            }
+            normal
         }
 
     }

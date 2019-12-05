@@ -11,6 +11,7 @@ use crate::intersection::Intersection;
 use crate::tuple::{Tuple, vector};
 use crate::float::Float;
 use crate::shape::shape_list::ShapeList;
+use crate::normal_perturber::NormalPerturber;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Plane {
@@ -111,9 +112,15 @@ impl Shape for Plane {
         return vec![Intersection::new(t.value(), Box::new(self.clone()))]
     }
 
-    fn normal_at(&self, _point: &Tuple) -> Tuple {
+    fn normal_at(&self, point: &Tuple) -> Tuple {
         // Constant normal of an xy plane
-        vector(0.0, 1.0, 0.0)
+        let mut normal = vector(0.0, 1.0, 0.0);
+        if self.material.normal_perturb.is_some() {
+            let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
+                                                          point, self.material.normal_perturb_factor);
+            normal = normal + perturb;
+        }
+        normal
     }
 }
 

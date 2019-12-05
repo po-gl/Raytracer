@@ -13,6 +13,7 @@ use std::any::Any;
 use std::fmt::{Formatter, Error};
 use num_traits::float::Float as NumFloat;
 use crate::shape::shape_list::ShapeList;
+use crate::normal_perturber::NormalPerturber;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Cube {
@@ -125,11 +126,29 @@ impl Shape for Cube {
         let maxc = object_point.x.value().abs().max(object_point.y.value().abs().max(object_point.z.value().abs()));
 
         if Float(maxc) == Float(object_point.x.value().abs()) {
-            return vector(object_point.x.value(), 0.0, 0.0)
+            let mut normal = vector(object_point.x.value(), 0.0, 0.0);
+            if self.material.normal_perturb.is_some() {
+                let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
+                                                              object_point, self.material.normal_perturb_factor);
+                normal = normal + perturb;
+            }
+            normal
         } else if Float(maxc) == Float(object_point.y.value().abs()) {
-            return vector(0.0, object_point.y.value(), 0.0)
+            let mut normal = vector(0.0, object_point.y.value(), 0.0);
+            if self.material.normal_perturb.is_some() {
+                let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
+                                                              object_point, self.material.normal_perturb_factor);
+                normal = normal + perturb;
+            }
+            normal
         } else {
-            return vector(0.0, 0.0, object_point.z.value())
+            let mut normal = vector(0.0, 0.0, object_point.z.value());
+            if self.material.normal_perturb.is_some() {
+                let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
+                                                              object_point, self.material.normal_perturb_factor);
+                normal = normal + perturb;
+            }
+            normal
         }
     }
 }

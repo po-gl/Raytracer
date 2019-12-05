@@ -12,6 +12,7 @@ use crate::material::Material;
 use std::any::Any;
 use std::fmt::{Formatter, Error};
 use crate::shape::shape_list::ShapeList;
+use crate::normal_perturber::NormalPerturber;
 
 
 #[derive(Debug, PartialEq, Clone)]
@@ -125,6 +126,11 @@ impl Shape for Sphere {
         let object_normal = object_point - point(0.0, 0.0, 0.0);
         let mut world_normal = self.transform.inverse().transpose() * object_normal;
         world_normal.w = Float(0.0);
+        if self.material.normal_perturb.is_some() {
+            let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
+                                                          object_point, self.material.normal_perturb_factor);
+            world_normal = world_normal + perturb;
+        }
         world_normal.normalize()
     }
 }

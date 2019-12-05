@@ -12,6 +12,7 @@ use crate::intersection::Intersection;
 use crate::tuple::{Tuple};
 use crate::float::Float;
 use crate::shape::shape_list::ShapeList;
+use crate::normal_perturber::NormalPerturber;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Triangle {
@@ -141,8 +142,14 @@ impl Shape for Triangle {
         return vec![Intersection::new(t, Box::new(self.clone()))]
     }
 
-    fn normal_at(&self, _point: &Tuple) -> Tuple {
-        self.normal
+    fn normal_at(&self, point: &Tuple) -> Tuple {
+        let mut normal = self.normal;
+        if self.material.normal_perturb.is_some() {
+            let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
+                                                          point, self.material.normal_perturb_factor);
+            normal = normal + perturb;
+        }
+        normal
     }
 }
 
