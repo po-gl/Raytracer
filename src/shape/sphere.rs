@@ -71,6 +71,10 @@ impl Shape for Sphere {
         }
     }
 
+    fn includes(&self, id: i32) -> bool {
+        self.id == id
+    }
+
     fn set_parent(&mut self, parent_id: i32, shape_list: &mut ShapeList) {
         self.parent_id = Some(parent_id);
         shape_list.update(Box::new(self.clone()));
@@ -79,7 +83,6 @@ impl Shape for Sphere {
     fn transform(&self) -> Matrix4 {
         self.transform
     }
-
 
     fn set_transform(&mut self, transform: Matrix4, shape_list: &mut ShapeList) {
         self.transform = transform;

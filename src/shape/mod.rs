@@ -24,6 +24,8 @@ pub mod cone;
 pub mod group;
 pub mod triangle;
 
+pub mod csg;
+
 
 lazy_static! {
     static ref SHAPE_ID: Mutex<i32> = Mutex::new(-1);
@@ -48,6 +50,8 @@ pub trait Shape: Any {
     fn id(&self) -> i32;
 
     fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape>>;
+
+    fn includes(&self, id: i32) -> bool;
 
     fn set_parent(&mut self, parent_id: i32, shape_list: &mut ShapeList) ;
 
