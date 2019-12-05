@@ -12,7 +12,7 @@ use crate::world::World;
 use crate::shape::shape_list::ShapeList;
 use crate::ray::Ray;
 
-const DEFAULT_RAY_COUNT: usize = 20;
+const DEFAULT_RAY_COUNT: usize = 100;
 
 #[derive(Debug, PartialEq)]
 pub struct Light {
@@ -48,7 +48,7 @@ impl Light {
             y /= magnitude;
             z /= magnitude;
 
-            let distance = rng.gen::<f64>() * self.radius.unwrap();
+            let distance = rng.gen::<f64>().cbrt() * self.radius.unwrap();
             let random_point = self.position + tuple::point(x * distance, y * distance, z * distance);
             let mut vector = random_point - point;
             vector.w = Float(0.0);
