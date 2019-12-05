@@ -15,7 +15,7 @@ use crate::tuple::{point, vector};
 use crate::material::Material;
 use crate::light;
 use crate::light::Light;
-use crate::transformation::{scaling, translation, rotation_y, rotation_x, view_transform, rotation_z};
+use crate::transformation::{scaling, translation, rotation_y, rotation_x, view_transform};
 use crate::float::Float;
 use crate::world::World;
 use crate::camera::Camera;
@@ -34,6 +34,7 @@ use crate::shape::cone::Cone;
 use crate::shape::group::Group;
 use crate::shape::triangle::Triangle;
 use crate::file::obj_loader::Parser;
+use crate::shape::shape_list::ShapeList;
 
 //--------------------------------------------------
 //--------------------------------------------------
@@ -47,8 +48,9 @@ pub fn draw_obj_scene() {
 
     // Construct world
     let mut world = World::new();
+    let mut shape_list = ShapeList::new();
 
-    let mut floor = Plane::new();
+    let mut floor = Plane::new(&mut shape_list);
     floor.transform = scaling(10.0, 0.01, 10.0);
     let mut material = Material::new();
     material.reflective = Float(0.4);
@@ -64,22 +66,23 @@ pub fn draw_obj_scene() {
     let p1 = point(0.0, 1.0, 0.0);
     let p2 = point(-1.0, 0.0, 0.0);
     let p3 = point(1.0, 0.0, 0.0);
-    let mut tri = Triangle::new(p1, p2, p3);
+    let mut tri = Triangle::new(p1, p2, p3, &mut shape_list);
     tri.transform = translation(0.0, 0.0, 36.0) * scaling(6.0, 6.0, 6.0);
     let mut material = Material::new();
     material.color = Color::from_hex("FF0000");
     tri.material = material;
     world.objects.push(Box::new(tri));
 
-    let parser = Parser::parse_obj_file("Obj/deer.obj");
-    let mut group = parser.unwrap().default_group;
-    println!("Group count: {:?}", group.shapes.len());
-    group.transform = translation(0.0, 1.0, -2.0) * rotation_y(PI/6.0) * scaling(1.0, 1.0, 1.0);
+    let parser = Parser::parse_obj_file("Obj/cat.obj", &mut shape_list);
+    let mut tri_group = parser.unwrap().default_group;
+    tri_group.transform = translation(0.0, 0.0, -3.0) * scaling(1.0, 1.0, 1.0) * rotation_y(PI/6.0);
     let mut material = Material::new();
     material.color = Color::from_hex("FF8800");
-    group.material = material;
-    world.objects.push(Box::new(group));
+    tri_group.material = material;
 
+    println!("Total shapes list {}\n{:#?}", &shape_list.len(), &shape_list);
+
+    world.objects.push(Box::new(tri_group));
 
     let light = Light::point_light(&point(-10.0, 16.0, -10.0), &Color::new(1.0, 1.0, 1.0));
     world.lights.push(light);
@@ -88,55 +91,55 @@ pub fn draw_obj_scene() {
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
     camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
 
-    println!("Finished reading objects. Starting render.");
-    let canvas = camera.render(world);
+    let canvas = camera.render(world, &mut shape_list);
     file::write_to_file(canvas.to_ppm(), String::from("obj_scene.ppm"))
 }
 
 //--------------------------------------------------
 
-pub fn hexagon() -> Box<dyn Shape> {
-    let mut hex = Group::new();
-
-    for i in 0..5 {
-        let mut side = hexagon_side(Box::new(hex.clone()));
-        println!("Children: {:#?}", side);
-        println!();
-        side.set_transform(rotation_y(i as f64 * PI/3.0));
-        hex.add_child(&mut side)
-    }
-//    println!("Children: {:#?}", hex);
-    Box::new(hex)
-}
-
-pub fn hexagon_side(parent: Box<dyn Shape>) -> Box<dyn Shape> {
-    let mut side = Group::new();
-    side.add_child(&mut hexagon_corner(Box::new(side.clone())));
-    println!("  side1: {:#?}", side);
-    side.add_child(&mut hexagon_edge(Box::new(side.clone())));
-    println!("  side2: {:#?}", side);
-
-    Box::new(side).set_parent(parent)
-}
-
-pub fn hexagon_edge(parent: Box<dyn Shape>) -> Box<dyn Shape> {
-    let mut edge = Cylinder::new();
-    edge.minimum = 0.0;
-    edge.maximum = 0.0;
-    edge.transform = translation(0.0, 0.0, -1.0) *
-        rotation_y(-PI/6.0) *
-        rotation_z(-PI/2.0) *
-        scaling(0.25, 1.0, 0.25);
-
-    Box::new(edge).set_parent(parent)
-}
-
-pub fn hexagon_corner(parent: Box<dyn Shape>) -> Box<dyn Shape> {
-    let mut corner = Sphere::new();
-    corner.transform = translation(0.0, 0.0, -1.0) * scaling(0.25, 0.25, 0.25);
-
-    Box::new(corner).set_parent(parent)
-}
+//pub fn hexagon(shape_list: &mut ShapeList) -> Box<dyn Shape> {
+//    let mut hex = Group::new(shape_list);
+//
+//    for i in 0..5 {
+//        let mut side = hexagon_side(Box::new(hex.clone()), shape_list);
+//        println!("Children: {:#?}", side);
+//        println!();
+//        side.set_transform(rotation_y(i as f64 * PI/3.0), shape_list);
+//        hex.add_child(&mut side)
+//    }
+////    println!("Children: {:#?}", hex);
+//    Box::new(hex)
+//}
+//
+//pub fn hexagon_side(parent: Box<dyn Shape>, shape_list: &mut ShapeList) -> Box<dyn Shape> {
+//    let mut side = Group::new(shape_list);
+//    side.add_child(&mut hexagon_corner(Box::new(side.clone()), shape_list));
+//    println!("  side1: {:#?}", side);
+//    side.add_child(&mut hexagon_edge(Box::new(side.clone()), shape_list));
+//    println!("  side2: {:#?}", side);
+//
+//    Box::new(side).set_parent(parent)
+//}
+//
+//pub fn hexagon_edge(parent: Box<dyn Shape>, shape_list: &mut ShapeList) -> Box<dyn Shape> {
+//    let mut edge = Cylinder::new(shape_list);
+//    edge.minimum = 0.0;
+//    edge.maximum = 0.0;
+//    edge.transform = translation(0.0, 0.0, -1.0) *
+//        rotation_y(-PI/6.0) *
+//        rotation_z(-PI/2.0) *
+//        scaling(0.25, 1.0, 0.25);
+//    shape_list.update(Box::new(edge.clone()));
+//
+//    Box::new(edge).set_parent(parent)
+//}
+//
+//pub fn hexagon_corner(parent: Box<dyn Shape>, shape_list: &mut ShapeList) -> Box<dyn Shape> {
+//    let mut corner = Sphere::new(shape_list);
+//    corner.transform = translation(0.0, 0.0, -1.0) * scaling(0.25, 0.25, 0.25);
+//
+//    Box::new(corner).set_parent(parent)
+//}
 
 pub fn draw_hexagon_scene() {
     // Options
@@ -146,8 +149,9 @@ pub fn draw_hexagon_scene() {
 
     // Construct world
     let mut world = World::new();
+    let mut shape_list = ShapeList::new();
 
-    let mut floor = Plane::new();
+    let mut floor = Plane::new(&mut shape_list);
     floor.transform = scaling(10.0, 0.01, 10.0);
     let mut material = Material::new();
     material.reflective = Float(0.4);
@@ -172,18 +176,18 @@ pub fn draw_hexagon_scene() {
 //    hexagon.set_material(material);
 //    world.objects.push(hexagon);
 
-    let mut s1: Box<dyn Shape> = Box::new(Sphere::new());
-    let mut s2: Box<dyn Shape> = Box::new(Sphere::new());
-    let mut s3: Box<dyn Shape> = Box::new(Sphere::new());
+    let mut s1: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
+    let mut s2: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
+    let mut s3: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
 
-    s1.set_transform(translation(1.5, 1.0, 0.0));
-    s2.set_transform(translation(0.0, 1.0, 0.0));
-    s3.set_transform(translation(-1.5, 1.0, 0.0));
+    s1.set_transform(translation(1.5, 1.0, 0.0), &mut shape_list);
+    s2.set_transform(translation(0.0, 1.0, 0.0), &mut shape_list);
+    s3.set_transform(translation(-1.5, 1.0, 0.0), &mut shape_list);
 
-    let mut g = Group::new();
-    g.add_child(&mut s1);
-    g.add_child(&mut s2);
-    g.add_child(&mut s3);
+    let mut g = Group::new(&mut shape_list);
+    g.add_child(&mut s1, &mut shape_list);
+    g.add_child(&mut s2, &mut shape_list);
+    g.add_child(&mut s3, &mut shape_list);
     world.objects.push(Box::new(g));
 
 //    world.objects.push(Box::new(s1));
@@ -198,7 +202,7 @@ pub fn draw_hexagon_scene() {
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
     camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
 
-    let canvas = camera.render(world);
+    let canvas = camera.render(world, &mut shape_list);
     file::write_to_file(canvas.to_ppm(), String::from("hexagon_scene.ppm"))
 }
 
@@ -212,8 +216,9 @@ pub fn draw_cone_scene() {
 
     // Construct world
     let mut world = World::new();
+    let mut shape_list = ShapeList::new();
 
-    let mut floor = Plane::new();
+    let mut floor = Plane::new(&mut shape_list);
     floor.transform = scaling(10.0, 0.01, 10.0);
     let mut material = Material::new();
     material.reflective = Float(0.4);
@@ -261,13 +266,13 @@ pub fn draw_cone_scene() {
         cylinder.material = material;
         world.objects.push(Box::new(cylinder));
 
-        let mut glass_sphere = Sphere::new();
+        let mut glass_sphere = Sphere::new(&mut shape_list);
         glass_sphere.transform = rotation_y(rotation) * translation(0.0, 3.5, -3.0) * scaling(0.2, 0.2, 0.2);
         let material = Material::glass();
         glass_sphere.material = material;
         world.objects.push(Box::new(glass_sphere));
 
-        glass_sphere = Sphere::new();
+        glass_sphere = Sphere::new(&mut shape_list);
         glass_sphere.transform = rotation_y(rotation) * translation(0.0, 0.2, -3.0) * scaling(0.2, 0.2, 0.2);
         let material = Material::glass();
         glass_sphere.material = material;
@@ -281,7 +286,7 @@ pub fn draw_cone_scene() {
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
     camera.transform = view_transform(point(0.0, 3.5, -6.5), point(0.0, 2.0, 0.0), vector(0.0, 1.0, 0.0));
 
-    let canvas = camera.render(world);
+    let canvas = camera.render(world, &mut shape_list);
     file::write_to_file(canvas.to_ppm(), String::from("cone_scene.ppm"))
 }
 
@@ -296,8 +301,9 @@ pub fn draw_cylinder_refracted_scene() {
 
     // Construct world
     let mut world = World::new();
+    let mut shape_list = ShapeList::new();
 
-    let mut floor = Plane::new();
+    let mut floor = Plane::new(&mut shape_list);
     floor.transform = scaling(10.0, 0.01, 10.0);
     let mut material = Material::new();
     material.reflective = Float(0.4);
@@ -334,7 +340,7 @@ pub fn draw_cylinder_refracted_scene() {
         cylinder.material = material;
         world.objects.push(Box::new(cylinder));
 
-        let mut glass_sphere = Sphere::new();
+        let mut glass_sphere = Sphere::new(&mut shape_list);
         glass_sphere.transform = rotation_y(PI - PI/6.0 * i as f64) * translation(0.0, 2.5, -3.0) * scaling(0.2, 0.2, 0.2);
         let material = Material::glass();
         glass_sphere.material = material;
@@ -375,7 +381,7 @@ pub fn draw_cylinder_refracted_scene() {
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
     camera.transform = view_transform(point(0.0, 5.0, -10.0), point(0.0, 0.0, 0.0), vector(0.0, 1.0, 0.0));
 
-    let canvas = camera.render(world);
+    let canvas = camera.render(world, &mut shape_list);
     file::write_to_file(canvas.to_ppm(), String::from("cylinder_refracted_scene.ppm"))
 }
 
@@ -389,8 +395,9 @@ pub fn draw_cylinder_scene() {
 
     // Construct world
     let mut world = World::new();
+    let mut shape_list = ShapeList::new();
 
-    let mut floor = Plane::new();
+    let mut floor = Plane::new(&mut shape_list);
     floor.transform = scaling(10.0, 0.01, 10.0);
     let mut material = Material::new();
     material.reflective = Float(0.4);
@@ -427,7 +434,7 @@ pub fn draw_cylinder_scene() {
         cylinder.material = material;
         world.objects.push(Box::new(cylinder));
 
-        let mut glass_sphere = Sphere::new();
+        let mut glass_sphere = Sphere::new(&mut shape_list);
         glass_sphere.transform = rotation_y(PI/6.0 * i as f64) * translation(0.0, 2.5, -3.0) * scaling(0.2, 0.2, 0.2);
         let material = Material::glass();
         glass_sphere.material = material;
@@ -442,7 +449,7 @@ pub fn draw_cylinder_scene() {
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
     camera.transform = view_transform(point(0.0, 4.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
 
-    let canvas = camera.render(world);
+    let canvas = camera.render(world, &mut shape_list);
     file::write_to_file(canvas.to_ppm(), String::from("cylinder_scene.ppm"))
 }
 
@@ -456,8 +463,9 @@ pub fn draw_refracted_scene() {
 
     // Construct world
     let mut world = World::new();
+    let mut shape_list = ShapeList::new();
 
-    let mut floor = Plane::new();
+    let mut floor = Plane::new(&mut shape_list);
     floor.transform = scaling(10.0, 0.01, 10.0);
     let mut material = Material::new();
     material.reflective = Float(0.4);
@@ -470,13 +478,13 @@ pub fn draw_refracted_scene() {
     floor.material = material;
     world.objects.push(Box::new(floor));
 
-    let mut glass_sphere = Sphere::new();
+    let mut glass_sphere = Sphere::new(&mut shape_list);
     glass_sphere.transform = translation(-0.5, 0.45, -2.0) * scaling(0.45, 0.45, 0.45);
     let material = Material::glass();
     glass_sphere.material = material;
     world.objects.push(Box::new(glass_sphere));
 
-    let mut pedestal = Cube::new();
+    let mut pedestal = Cube::new(&mut shape_list);
     pedestal.transform = translation(0.8, 1.0, -1.0) * rotation_y(PI/6.0) * scaling(0.2, 1.0, 0.5);
     let mut material = Material::glass();
     material.diffuse = Float(0.01);
@@ -484,7 +492,7 @@ pub fn draw_refracted_scene() {
     pedestal.material = material;
     world.objects.push(Box::new(pedestal));
 
-    let mut middle_sphere = Sphere::new();
+    let mut middle_sphere = Sphere::new(&mut shape_list);
     middle_sphere.transform = translation(-0.5, 1.0, 0.5);
     let mut material = Material::new();
     let pattern_a = RingPattern::new(Color::from_hex("F4C095"), Color::from_hex("679289"));
@@ -497,7 +505,7 @@ pub fn draw_refracted_scene() {
     middle_sphere.material = material;
     world.objects.push(Box::new(middle_sphere));
 
-    let mut right_sphere = Sphere::new();
+    let mut right_sphere = Sphere::new(&mut shape_list);
     right_sphere.transform = translation(1.5, 0.5, -0.5) * scaling(0.5, 0.5, 0.5);
     let mut material = Material::new();
     material.reflective = Float(0.4);
@@ -510,7 +518,7 @@ pub fn draw_refracted_scene() {
     right_sphere.material = material;
     world.objects.push(Box::new(right_sphere));
 
-    let mut left_sphere = Sphere::new();
+    let mut left_sphere = Sphere::new(&mut shape_list);
     left_sphere.transform = translation(-1.5, 0.33, -0.75) * scaling(0.33, 0.33, 0.33);
     let mut material = Material::new();
     material.reflective = Float(0.7);
@@ -527,7 +535,7 @@ pub fn draw_refracted_scene() {
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
     camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
 
-    let canvas = camera.render(world);
+    let canvas = camera.render(world, &mut shape_list);
     file::write_to_file(canvas.to_ppm(), String::from("refracted_scene.ppm"))
 }
 
@@ -541,8 +549,9 @@ pub fn draw_reflected_scene() {
 
     // Construct world
     let mut world = World::new();
+    let mut shape_list = ShapeList::new();
 
-    let mut floor = Plane::new();
+    let mut floor = Plane::new(&mut shape_list);
     floor.transform = scaling(10.0, 0.01, 10.0);
     let mut material = Material::new();
     material.reflective = Float(0.4);
@@ -555,7 +564,7 @@ pub fn draw_reflected_scene() {
     floor.material = material;
     world.objects.push(Box::new(floor));
 
-    let mut middle_sphere = Sphere::new();
+    let mut middle_sphere = Sphere::new(&mut shape_list);
     middle_sphere.transform = translation(-0.5, 1.0, 0.5);
     let mut material = Material::new();
     let pattern_a = RingPattern::new(Color::from_hex("F4C095"), Color::from_hex("679289"));
@@ -568,7 +577,7 @@ pub fn draw_reflected_scene() {
     middle_sphere.material = material;
     world.objects.push(Box::new(middle_sphere));
 
-    let mut right_sphere = Sphere::new();
+    let mut right_sphere = Sphere::new(&mut shape_list);
     right_sphere.transform = translation(1.5, 0.5, -0.5) * scaling(0.5, 0.5, 0.5);
     let mut material = Material::new();
     material.reflective = Float(0.4);
@@ -581,7 +590,7 @@ pub fn draw_reflected_scene() {
     right_sphere.material = material;
     world.objects.push(Box::new(right_sphere));
 
-    let mut left_sphere = Sphere::new();
+    let mut left_sphere = Sphere::new(&mut shape_list);
     left_sphere.transform = translation(-1.5, 0.33, -0.75) * scaling(0.33, 0.33, 0.33);
     let mut material = Material::new();
     material.reflective = Float(0.7);
@@ -598,7 +607,7 @@ pub fn draw_reflected_scene() {
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
     camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
 
-    let canvas = camera.render(world);
+    let canvas = camera.render(world, &mut shape_list);
     file::write_to_file(canvas.to_ppm(), String::from("refracted_scene.ppm"))
 }
 
@@ -612,8 +621,9 @@ pub fn draw_perturbed_patterned_scene() {
 
     // Construct world
     let mut world = World::new();
+    let mut shape_list = ShapeList::new();
 
-    let mut floor = Plane::new();
+    let mut floor = Plane::new(&mut shape_list);
     floor.transform = scaling(10.0, 0.01, 10.0);
     let mut material = Material::new();
     let pattern_b = RingPattern::new(Color::from_hex("FF0000"), Color::black());
@@ -626,7 +636,7 @@ pub fn draw_perturbed_patterned_scene() {
     floor.material = material;
     world.objects.push(Box::new(floor));
 
-    let mut middle_sphere = Sphere::new();
+    let mut middle_sphere = Sphere::new(&mut shape_list);
     middle_sphere.transform = translation(-0.5, 1.0, 0.5);
     let mut material = Material::new();
     let pattern_a = RingPattern::new(Color::from_hex("F4C095"), Color::from_hex("679289"));
@@ -640,7 +650,7 @@ pub fn draw_perturbed_patterned_scene() {
     middle_sphere.material = material;
     world.objects.push(Box::new(middle_sphere));
 
-    let mut right_sphere = Sphere::new();
+    let mut right_sphere = Sphere::new(&mut shape_list);
     right_sphere.transform = translation(1.5, 0.5, -0.5) * scaling(0.5, 0.5, 0.5);
     let mut material = Material::new();
     let mut pattern = StripePattern::new(Color::white(), Color::black());
@@ -652,7 +662,7 @@ pub fn draw_perturbed_patterned_scene() {
     right_sphere.material = material;
     world.objects.push(Box::new(right_sphere));
 
-    let mut left_sphere = Sphere::new();
+    let mut left_sphere = Sphere::new(&mut shape_list);
     left_sphere.transform = translation(-1.5, 0.33, -0.75) * scaling(0.33, 0.33, 0.33);
     let mut material = Material::new();
     material.color = Color::from_hex("6F2DBD");
@@ -668,7 +678,7 @@ pub fn draw_perturbed_patterned_scene() {
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
     camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
 
-    let canvas = camera.render(world);
+    let canvas = camera.render(world, &mut shape_list);
     file::write_to_file(canvas.to_ppm(), String::from("patterned_scene_perturbed.ppm"))
 }
 
@@ -682,8 +692,9 @@ pub fn draw_blended_patterned_scene() {
 
     // Construct world
     let mut world = World::new();
+    let mut shape_list = ShapeList::new();
 
-    let mut floor = Plane::new();
+    let mut floor = Plane::new(&mut shape_list);
     floor.transform = scaling(10.0, 0.01, 10.0);
     let mut material = Material::new();
     let pattern_a = RingPattern::new(Color::from_hex("FF0000"), Color::black());
@@ -696,7 +707,7 @@ pub fn draw_blended_patterned_scene() {
     floor.material = material;
     world.objects.push(Box::new(floor));
 
-    let mut middle_sphere = Sphere::new();
+    let mut middle_sphere = Sphere::new(&mut shape_list);
     middle_sphere.transform = translation(-0.5, 1.0, 0.5);
     let mut material = Material::new();
     let mut pattern = GradientPattern::new(Color::from_hex("679289"), Color::from_hex("F4C095"));
@@ -708,7 +719,7 @@ pub fn draw_blended_patterned_scene() {
     middle_sphere.material = material;
     world.objects.push(Box::new(middle_sphere));
 
-    let mut right_sphere = Sphere::new();
+    let mut right_sphere = Sphere::new(&mut shape_list);
     right_sphere.transform = translation(1.5, 0.5, -0.5) * scaling(0.5, 0.5, 0.5);
     let mut material = Material::new();
     let mut pattern = StripePattern::new(Color::white(), Color::black());
@@ -720,7 +731,7 @@ pub fn draw_blended_patterned_scene() {
     right_sphere.material = material;
     world.objects.push(Box::new(right_sphere));
 
-    let mut left_sphere = Sphere::new();
+    let mut left_sphere = Sphere::new(&mut shape_list);
     left_sphere.transform = translation(-1.5, 0.33, -0.75) * scaling(0.33, 0.33, 0.33);
     let mut material = Material::new();
     material.color = Color::from_hex("6F2DBD");
@@ -736,7 +747,7 @@ pub fn draw_blended_patterned_scene() {
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
     camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
 
-    let canvas = camera.render(world);
+    let canvas = camera.render(world, &mut shape_list);
     file::write_to_file(canvas.to_ppm(), String::from("patterned_scene_blended.ppm"))
 }
 
@@ -750,8 +761,9 @@ pub fn draw_patterned_scene() {
 
     // Construct world
     let mut world = World::new();
+    let mut shape_list = ShapeList::new();
 
-    let mut floor = Plane::new();
+    let mut floor = Plane::new(&mut shape_list);
     floor.transform = scaling(10.0, 0.01, 10.0);
     let mut material = Material::new();
     let mut pattern = RingPattern::new(Color::from_hex("EE2E31"), Color::black());
@@ -762,7 +774,7 @@ pub fn draw_patterned_scene() {
     floor.material = material;
     world.objects.push(Box::new(floor));
 
-    let mut middle_sphere = Sphere::new();
+    let mut middle_sphere = Sphere::new(&mut shape_list);
     middle_sphere.transform = translation(-0.5, 1.0, 0.5);
     let mut material = Material::new();
     let mut pattern = GradientPattern::new(Color::from_hex("679289"), Color::from_hex("F4C095"));
@@ -774,7 +786,7 @@ pub fn draw_patterned_scene() {
     middle_sphere.material = material;
     world.objects.push(Box::new(middle_sphere));
 
-    let mut right_sphere = Sphere::new();
+    let mut right_sphere = Sphere::new(&mut shape_list);
     right_sphere.transform = translation(1.5, 0.5, -0.5) * scaling(0.5, 0.5, 0.5);
     let mut material = Material::new();
     let mut pattern = StripePattern::new(Color::white(), Color::black());
@@ -786,7 +798,7 @@ pub fn draw_patterned_scene() {
     right_sphere.material = material;
     world.objects.push(Box::new(right_sphere));
 
-    let mut left_sphere = Sphere::new();
+    let mut left_sphere = Sphere::new(&mut shape_list);
     left_sphere.transform = translation(-1.5, 0.33, -0.75) * scaling(0.33, 0.33, 0.33);
     let mut material = Material::new();
     material.color = Color::from_hex("6F2DBD");
@@ -802,7 +814,7 @@ pub fn draw_patterned_scene() {
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
     camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
 
-    let canvas = camera.render(world);
+    let canvas = camera.render(world, &mut shape_list);
     file::write_to_file(canvas.to_ppm(), String::from("patterned_scene.ppm"))
 }
 
@@ -816,8 +828,9 @@ pub fn draw_scene_on_a_plane() {
 
     // Construct world
     let mut world = World::new();
+    let mut shape_list = ShapeList::new();
 
-    let mut floor = Plane::new();
+    let mut floor = Plane::new(&mut shape_list);
     floor.transform = scaling(10.0, 0.01, 10.0);
     let mut material = Material::new();
     material.color = Color::from_hex("FFE2BA");
@@ -825,7 +838,7 @@ pub fn draw_scene_on_a_plane() {
     floor.material = material;
     world.objects.push(Box::new(floor));
 
-    let mut middle_sphere = Sphere::new();
+    let mut middle_sphere = Sphere::new(&mut shape_list);
     middle_sphere.transform = translation(-0.5, 1.0, 0.5);
     let mut material = Material::new();
     material.color = Color::from_hex("7AC16C");
@@ -834,7 +847,7 @@ pub fn draw_scene_on_a_plane() {
     middle_sphere.material = material;
     world.objects.push(Box::new(middle_sphere));
 
-    let mut right_sphere = Sphere::new();
+    let mut right_sphere = Sphere::new(&mut shape_list);
     right_sphere.transform = translation(1.5, 0.5, -0.5) * scaling(0.5, 0.5, 0.5);
     let mut material = Material::new();
     material.color = Color::from_hex("56D8CD");
@@ -843,7 +856,7 @@ pub fn draw_scene_on_a_plane() {
     right_sphere.material = material;
     world.objects.push(Box::new(right_sphere));
 
-    let mut left_sphere = Sphere::new();
+    let mut left_sphere = Sphere::new(&mut shape_list);
     left_sphere.transform = translation(-1.5, 0.33, -0.75) * scaling(0.33, 0.33, 0.33);
     let mut material = Material::new();
     material.color = Color::from_hex("6F2DBD");
@@ -859,7 +872,7 @@ pub fn draw_scene_on_a_plane() {
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
     camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
 
-    let canvas = camera.render(world);
+    let canvas = camera.render(world, &mut shape_list);
     file::write_to_file(canvas.to_ppm(), String::from("scene_on_a_plane.ppm"))
 }
 
@@ -873,8 +886,9 @@ pub fn draw_first_scene() {
 
     // Construct world
     let mut world = World::new();
+    let mut shape_list = ShapeList::new();
 
-    let mut floor = Sphere::new();
+    let mut floor = Sphere::new(&mut shape_list);
     floor.transform = scaling(10.0, 0.01, 10.0);
     let mut material = Material::new();
     material.color = Color::from_hex("F2E2BA");
@@ -882,7 +896,7 @@ pub fn draw_first_scene() {
     floor.material = material;
     world.objects.push(Box::new(floor));
 
-    let mut left_wall = Sphere::new();
+    let mut left_wall = Sphere::new(&mut shape_list);
     left_wall.transform = translation(0.0, 0.0, 5.0) *
         rotation_y(-PI/4.0) * rotation_x(PI/2.0) *
         scaling(10.0, 0.01, 10.0);
@@ -891,7 +905,7 @@ pub fn draw_first_scene() {
     left_wall.material = material;
     world.objects.push(Box::new(left_wall));
 
-    let mut right_wall = Sphere::new();
+    let mut right_wall = Sphere::new(&mut shape_list);
     right_wall.transform = translation(0.0, 0.0, 5.0) *
         rotation_y(PI/4.0) * rotation_x(PI/2.0) *
         scaling(10.0, 0.01, 10.0);
@@ -900,7 +914,7 @@ pub fn draw_first_scene() {
     right_wall.material = material;
     world.objects.push(Box::new(right_wall));
 
-    let mut middle_sphere = Sphere::new();
+    let mut middle_sphere = Sphere::new(&mut shape_list);
     middle_sphere.transform = translation(-0.5, 1.0, 0.5);
     let mut material = Material::new();
     material.color = Color::from_hex("7AC16C");
@@ -909,7 +923,7 @@ pub fn draw_first_scene() {
     middle_sphere.material = material;
     world.objects.push(Box::new(middle_sphere));
 
-    let mut right_sphere = Sphere::new();
+    let mut right_sphere = Sphere::new(&mut shape_list);
     right_sphere.transform = translation(1.5, 0.5, -0.5) * scaling(0.5, 0.5, 0.5);
     let mut material = Material::new();
     material.color = Color::from_hex("56D8CD");
@@ -918,7 +932,7 @@ pub fn draw_first_scene() {
     right_sphere.material = material;
     world.objects.push(Box::new(right_sphere));
 
-    let mut left_sphere = Sphere::new();
+    let mut left_sphere = Sphere::new(&mut shape_list);
     left_sphere.transform = translation(-1.5, 0.33, -0.75) * scaling(0.33, 0.33, 0.33);
     let mut material = Material::new();
     material.color = Color::from_hex("6F2DBD");
@@ -934,7 +948,7 @@ pub fn draw_first_scene() {
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
     camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
 
-    let canvas = camera.render(world);
+    let canvas = camera.render(world, &mut shape_list);
     file::write_to_file(canvas.to_ppm(), String::from("first_scene.ppm"))
 }
 
@@ -943,9 +957,11 @@ pub fn draw_first_scene() {
 pub fn draw_shaded_circle() {
     let canvas_pixels = 500;
 
+    let mut shape_list = ShapeList::new();
+
     let mut material = Material::new();
     material.color = Color::from_hex("19647E");
-    let shape = Sphere::new_with_material(material);
+    let shape = Sphere::new_with_material(material, &mut shape_list);
 
     let light = Light::point_light(&point(-10.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0));
 
@@ -972,11 +988,11 @@ pub fn draw_shaded_circle() {
             let position = point(world_x, world_y, wall_z);
 
             let ray = Ray::new(ray_origin, (position - ray_origin).normalize());
-            let xs = shape.intersects(&ray);
+            let xs = shape.intersects(&ray, &mut shape_list);
             let hit = hit(xs);
             if hit != None {
                 let point = &ray.position(hit.as_ref().unwrap().t.value());
-                let normal = shape::normal_at(hit.as_ref().unwrap().object.clone(), *point);
+                let normal = shape::normal_at(hit.as_ref().unwrap().object.clone(), *point, &mut shape_list);
                 let eye = -&ray.direction;
                 let object = hit.as_ref().unwrap().object.clone();
 
@@ -991,8 +1007,9 @@ pub fn draw_shaded_circle() {
 //--------------------------------------------------
 
 pub fn draw_circle() {
+    let mut shape_list = ShapeList::new();
     let color = Color::new(1.0, 0.6, 0.1);
-    let shape = Sphere::new();
+    let shape = Sphere::new(&mut shape_list);
 //    shape.set_transform(transformation::scaling(0.5, 1.0, 1.0));
     let canvas_pixels = 500;
 
@@ -1019,7 +1036,7 @@ pub fn draw_circle() {
             let position = point(world_x, world_y, wall_z);
 
             let ray = Ray::new(ray_origin, (position - ray_origin).normalize());
-            let xs = shape.intersects(&ray);
+            let xs = shape.intersects(&ray, &mut shape_list);
 
             if hit(xs) != None {
                 canvas.write_pixel(x, y, &color);

@@ -3,7 +3,7 @@
 
 use crate::shape::Shape;
 use crate::ray::Ray;
-use crate::{shape, FLOAT_THRESHOLD};
+use crate::{FLOAT_THRESHOLD};
 use crate::intersection::Intersection;
 use crate::matrix::Matrix4;
 use crate::tuple::{Tuple, vector};
@@ -12,24 +12,29 @@ use crate::material::Material;
 use std::any::Any;
 use std::fmt::{Formatter, Error};
 use num_traits::float::Float as NumFloat;
+use crate::shape::shape_list::ShapeList;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Cube {
     pub id: i32,
-    pub parent: Option<Box<dyn Shape>>,
+    pub parent_id: Option<i32>,
     pub transform: Matrix4,
     pub material: Material,
 }
 
 impl Cube {
-    pub fn new() -> Cube {
-        let id = shape::get_shape_id();
-        Cube {id, parent: None, transform: Matrix4::identity(), material: Material::new()}
+    pub fn new(shape_list: &mut ShapeList) -> Cube {
+        let id = shape_list.get_id();
+        let shape = Cube {id, parent_id: None, transform: Matrix4::identity(), material: Material::new()};
+        shape_list.push(Box::new(shape.clone()));
+        shape
     }
 
-    pub fn new_with_material(material: Material) -> Cube {
-        let id = shape::get_shape_id();
-        Cube{id, parent: None, transform: Matrix4::identity(), material}
+    pub fn new_with_material(material: Material, shape_list: &mut ShapeList) -> Cube {
+        let id = shape_list.get_id();
+        let shape = Cube{id, parent_id: None, transform: Matrix4::identity(), material};
+        shape_list.push(Box::new(shape.clone()));
+        shape
     }
 }
 
@@ -58,32 +63,39 @@ impl Shape for Cube {
         self.id
     }
 
-    fn parent(&self) -> Option<Box<dyn Shape>> {
-        self.parent.clone()
+    fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape>> {
+        if self.parent_id.is_some() {
+            Some(shape_list[self.parent_id.unwrap() as usize].clone())
+        } else {
+            None
+        }
     }
 
-    fn set_parent(&mut self, parent: Box<dyn Shape>) -> Box<dyn Shape>{
-        self.parent = Some(parent);
-        Box::new(self.clone())
+    fn set_parent(&mut self, parent_id: i32, shape_list: &mut ShapeList) {
+        self.parent_id = Some(parent_id);
+        shape_list.update(Box::new(self.clone()));
     }
 
     fn transform(&self) -> Matrix4 {
         self.transform
     }
 
-    fn set_transform(&mut self, transform: Matrix4) {
+
+    fn set_transform(&mut self, transform: Matrix4, shape_list: &mut ShapeList) {
         self.transform = transform;
+        shape_list.update(Box::new(self.clone()))
     }
 
     fn material(&self) -> Material {
         self.material.clone()
     }
 
-    fn set_material(&mut self, material: Material) {
+    fn set_material(&mut self, material: Material, shape_list: &mut ShapeList) {
         self.material = material;
+        shape_list.update(Box::new(self.clone()))
     }
 
-    fn intersects(&self, ray: &Ray) -> Vec<Intersection<Box<dyn Shape>>> {
+    fn intersects(&self, ray: &Ray, _shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape>>> {
         // Transform the ray
         let t_ray = ray.transform(&self.transform.inverse());
 
@@ -150,6 +162,7 @@ mod tests {
     use super::*;
     use crate::tuple::vector;
     use crate::tuple::point;
+    use crate::shape;
 
     #[test]
     fn cube_intersects() {
@@ -163,11 +176,12 @@ mod tests {
             (point(0.5, 0.0, -5.0), vector(0.0, 0.0, 1.0), 4.0, 6.0), // -z
             (point(0.0, 0.5, 0.0), vector(0.0, 0.0, 1.0), -1.0, 1.0), // inside
         ];
+        let mut shape_list = ShapeList::new();
 
         for i in 0..examples.len() {
-            let c = Cube::new();
+            let c = Cube::new(&mut shape_list);
             let r = Ray::new(examples[i].0, examples[i].1);
-            let xs = c.intersects(&r);
+            let xs = c.intersects(&r, &mut shape_list);
             assert_eq!(xs.len(), 2);
             assert_eq!(xs[0].t, examples[i].2);
             assert_eq!(xs[1].t, examples[i].3);
@@ -185,11 +199,12 @@ mod tests {
             (point(0.0, 2.0, 2.0), vector(0.0, -1.0, 0.0)),
             (point(2.0, 2.0, 0.0), vector(-1.0, 0.0, 0.0)),
         ];
+        let mut shape_list = ShapeList::new();
 
         for i in 0..examples.len() {
-            let c = Cube::new();
+            let c = Cube::new(&mut shape_list);
             let r = Ray::new(examples[i].0, examples[i].1);
-            let xs = c.intersects(&r);
+            let xs = c.intersects(&r, &mut shape_list);
             assert_eq!(xs.len(), 0);
         }
     }
@@ -207,11 +222,12 @@ mod tests {
             (point(1.0, 1.0, 1.0), vector(1.0, 0.0, 0.0)),
             (point(-1.0, -1.0, -1.0), vector(-1.0, 0.0, 0.0)),
         ];
+        let mut shape_list = ShapeList::new();
 
         for i in 0..examples.len() {
-            let c = Cube::new();
+            let c = Cube::new(&mut shape_list);
             let p = examples[i].0;
-            let normal = shape::normal_at(Box::new(c), p);
+            let normal = shape::normal_at(Box::new(c), p, &mut shape_list);
             assert_eq!(normal, examples[i].1)
         }
     }

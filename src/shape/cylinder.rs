@@ -12,11 +12,12 @@ use crate::material::Material;
 use std::any::Any;
 use std::fmt::{Formatter, Error};
 use num_traits::float::Float as NumFloat;
+use crate::shape::shape_list::ShapeList;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Cylinder {
     pub id: i32,
-    pub parent: Option<Box<dyn Shape>>,
+    pub parent_id: Option<i32>,
     pub transform: Matrix4,
     pub material: Material,
     pub minimum: f64,
@@ -25,19 +26,23 @@ pub struct Cylinder {
 }
 
 impl Cylinder {
-    pub fn new() -> Cylinder {
-        let id = shape::get_shape_id();
-        Cylinder {id, parent: None, transform: Matrix4::identity(), material: Material::new(), minimum: NumFloat::neg_infinity(), maximum: NumFloat::infinity(), closed: false}
+    pub fn new(shape_list: &mut ShapeList) -> Cylinder {
+        let id = shape_list.get_id();
+        let shape = Cylinder {id, parent_id: None, transform: Matrix4::identity(), material: Material::new(), minimum: NumFloat::neg_infinity(), maximum: NumFloat::infinity(), closed: false};
+        shape_list.push(Box::new(shape.clone()));
+        shape
     }
 
-    pub fn new_with_material(material: Material) -> Cylinder {
-        let id = shape::get_shape_id();
-        Cylinder{id, parent: None, transform: Matrix4::identity(), material, minimum: NumFloat::neg_infinity(), maximum: NumFloat::infinity(), closed: false}
+    pub fn new_with_material(material: Material, shape_list: &mut ShapeList) -> Cylinder {
+        let id = shape_list.get_id();
+        let shape = Cylinder{id, parent_id: None, transform: Matrix4::identity(), material, minimum: NumFloat::neg_infinity(), maximum: NumFloat::infinity(), closed: false};
+        shape_list.push(Box::new(shape.clone()));
+        shape
     }
 
     pub fn new_bounded(minimum: f64, maximum: f64) -> Cylinder {
         let id = shape::get_shape_id();
-        Cylinder {id, parent: None, transform: Matrix4::identity(), material: Material::new(), minimum, maximum, closed: false}
+        Cylinder {id, parent_id: None, transform: Matrix4::identity(), material: Material::new(), minimum, maximum, closed: false}
     }
 
     /// Check if the intersection at t is within a radius of 1 from the y axis
@@ -91,32 +96,39 @@ impl Shape for Cylinder {
         self.id
     }
 
-    fn parent(&self) -> Option<Box<dyn Shape>> {
-        self.parent.clone()
+    fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape>> {
+        if self.parent_id.is_some() {
+            Some(shape_list[self.parent_id.unwrap() as usize].clone())
+        } else {
+            None
+        }
     }
 
-    fn set_parent(&mut self, parent: Box<dyn Shape>) -> Box<dyn Shape>{
-        self.parent = Some(parent);
-        Box::new(self.clone())
+    fn set_parent(&mut self, parent_id: i32, shape_list: &mut ShapeList) {
+        self.parent_id = Some(parent_id);
+        shape_list.update(Box::new(self.clone()));
     }
 
     fn transform(&self) -> Matrix4 {
         self.transform
     }
 
-    fn set_transform(&mut self, transform: Matrix4) {
+
+    fn set_transform(&mut self, transform: Matrix4, shape_list: &mut ShapeList) {
         self.transform = transform;
+        shape_list.update(Box::new(self.clone()))
     }
 
     fn material(&self) -> Material {
         self.material.clone()
     }
 
-    fn set_material(&mut self, material: Material) {
+    fn set_material(&mut self, material: Material, shape_list: &mut ShapeList) {
         self.material = material;
+        shape_list.update(Box::new(self.clone()))
     }
 
-    fn intersects(&self, ray: &Ray) -> Vec<Intersection<Box<dyn Shape>>> {
+    fn intersects(&self, ray: &Ray, _shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape>>> {
         // Transform the ray
         let t_ray = ray.transform(&self.transform.inverse());
 
@@ -188,12 +200,14 @@ mod tests {
 
     #[test]
     fn cylinder_creation() {
-        let cyl = Cylinder::new();
+        let mut shape_list = ShapeList::new();
+        let cyl = Cylinder::new(&mut shape_list);
         assert_eq!(cyl.closed, false);
     }
 
     #[test]
     fn cylinder_ray_misses() {
+        let mut shape_list = ShapeList::new();
         let examples = vec![
             // origin, direction
             (point(1.0, 0.0, 0.0), vector(0.0, 1.0, 0.0)),
@@ -202,16 +216,17 @@ mod tests {
         ];
 
         for i in 0..examples.len() {
-            let cyl = Cylinder::new();
+            let cyl = Cylinder::new(&mut shape_list);
             let direction = examples[i].1;
             let r = Ray::new(examples[i].0, direction);
-            let xs = cyl.intersects(&r);
+            let xs = cyl.intersects(&r, &mut shape_list);
             assert_eq!(xs.len(), 0);
         }
     }
 
     #[test]
     fn cylinder_intersects() {
+        let mut shape_list = ShapeList::new();
         let examples = vec![
             // origin, direction, t0, t1
             (point(1.0, 0.0, -5.0), vector(0.0, 0.0, 1.0), 5.0, 5.0),
@@ -220,10 +235,10 @@ mod tests {
         ];
 
         for i in 0..examples.len() {
-            let cyl = Cylinder::new();
+            let cyl = Cylinder::new(&mut shape_list);
             let direction = examples[i].1.normalize();
             let r = Ray::new(examples[i].0, direction);
-            let xs = cyl.intersects(&r);
+            let xs = cyl.intersects(&r, &mut shape_list);
             assert_eq!(xs.len(), 2);
             assert_eq!(xs[0].t, examples[i].2);
             assert_eq!(xs[1].t, examples[i].3);
@@ -232,6 +247,7 @@ mod tests {
 
     #[test]
     fn cylinder_normal_at() {
+        let mut shape_list = ShapeList::new();
         let examples = vec![
             // point, normal
             (point(1.0, 0.0, 0.0), vector(1.0, 0.0, 0.0)),
@@ -241,14 +257,15 @@ mod tests {
         ];
 
         for i in 0..examples.len() {
-            let cyl = Cylinder::new();
-            let n = shape::normal_at(Box::new(cyl), examples[i].0);
+            let cyl = Cylinder::new(&mut shape_list);
+            let n = shape::normal_at(Box::new(cyl), examples[i].0, &mut shape_list);
             assert_eq!(n, examples[i].1);
         }
     }
 
     #[test]
     fn cylinder_intersects_constrained() {
+        let mut shape_list = ShapeList::new();
         let examples = vec![
             // origin, direction, count
             (point(0.0, 1.5, 0.0), vector(0.1, 1.0, 0.0), 0),
@@ -260,18 +277,19 @@ mod tests {
         ];
 
         for i in 0..examples.len() {
-            let mut cyl = Cylinder::new();
+            let mut cyl = Cylinder::new(&mut shape_list);
             cyl.minimum = 1.0;
             cyl.maximum = 2.0;
             let direction = examples[i].1.normalize();
             let r = Ray::new(examples[i].0, direction);
-            let xs = cyl.intersects(&r);
+            let xs = cyl.intersects(&r, &mut shape_list);
             assert_eq!(xs.len(), examples[i].2);
         }
     }
     
     #[test]
     fn cylinder_intersects_capped() {
+        let mut shape_list = ShapeList::new();
         let examples = vec![
             // origin, direction, count
             (point(0.0, 3.0, 0.0), vector(0.0, -1.0, 0.0), 2),
@@ -282,19 +300,20 @@ mod tests {
         ];
 
         for i in 0..examples.len() {
-            let mut cyl = Cylinder::new();
+            let mut cyl = Cylinder::new(&mut shape_list);
             cyl.minimum = 1.0;
             cyl.maximum = 2.0;
             cyl.closed = true;
             let direction = examples[i].1.normalize();
             let r = Ray::new(examples[i].0, direction);
-            let xs = cyl.intersects(&r);
+            let xs = cyl.intersects(&r, &mut shape_list);
             assert_eq!(xs.len(), examples[i].2);
         }
     }
 
     #[test]
     fn cylinder_normal_capped() {
+        let mut shape_list = ShapeList::new();
         let examples = vec![
             // point, normal
             (point(0.0, 1.0, 0.0), vector(0.0, -1.0, 0.0)),
@@ -306,11 +325,11 @@ mod tests {
         ];
 
         for i in 0..examples.len() {
-            let mut cyl = Cylinder::new();
+            let mut cyl = Cylinder::new(&mut shape_list);
             cyl.minimum = 1.0;
             cyl.maximum = 2.0;
             cyl.closed = true;
-            let n = shape::normal_at(Box::new(cyl), examples[i].0);
+            let n = shape::normal_at(Box::new(cyl), examples[i].0, &mut shape_list);
             assert_eq!(n, examples[i].1);
         }
     }

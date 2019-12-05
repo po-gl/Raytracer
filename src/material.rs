@@ -85,6 +85,7 @@ mod tests {
     use crate::light::{Light, lighting};
     use crate::shape::sphere::Sphere;
     use crate::pattern::stripe_pattern::StripePattern;
+    use crate::shape::shape_list::ShapeList;
 
     #[test]
     fn material_creation() {
@@ -98,13 +99,14 @@ mod tests {
 
     #[test]
     fn material_pattern() {
+        let mut shape_list = ShapeList::new();
         let mut m = Material::new();
         m.pattern = Some(Box::new(StripePattern::new(Color::white(), Color::black())));
         m.ambient = Float(1.0);
         m.diffuse = Float(0.0);
         m.specular = Float(0.0);
 
-        let object = Sphere::new();
+        let object = Sphere::new(&mut shape_list);
         let eyev = vector(0.0, 0.0, -1.0);
         let normalv = vector(0.0, 0.0, -1.0);
         let light = Light::point_light(&point(0.0, 0.0, -10.0), &Color::white());

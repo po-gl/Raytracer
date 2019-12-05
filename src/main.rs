@@ -19,6 +19,7 @@ pub mod color;
 pub mod material;
 pub mod pattern;
 pub mod shape;
+pub mod csg;
 pub mod light;
 pub mod world;
 pub mod camera;

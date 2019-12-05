@@ -8,6 +8,7 @@ use crate::tuple::point;
 use crate::world::World;
 use crate::canvas::Canvas;
 use indicatif::ProgressStyle;
+use crate::shape::shape_list::ShapeList;
 
 #[derive(Debug)]
 pub struct Camera {
@@ -68,7 +69,7 @@ impl Camera {
         Ray::new(origin, direction)
     }
 
-    pub fn render(&self, world: World) -> Canvas {
+    pub fn render(&self, world: World, shape_list: &mut ShapeList) -> Canvas {
         let mut image = Canvas::new(self.h_size, self.v_size);
 
         let pb = indicatif::ProgressBar::new(self.v_size as u64);
@@ -78,7 +79,7 @@ impl Camera {
         for y in 0..self.v_size {
             for x in 0..self.h_size {
                 let ray = self.ray_for_pixel(x, y);
-                let color = world.color_at(&ray);
+                let color = world.color_at(&ray, shape_list);
                 image.write_pixel(y, x, &color);
             }
             pb.inc(1);
@@ -96,6 +97,7 @@ mod tests {
     use crate::transformation::{rotation_y, translation, view_transform};
     use crate::color::Color;
     use crate::tuple::vector;
+    use crate::shape::shape_list::ShapeList;
 
     #[test]
     fn camera_creation() {
@@ -139,13 +141,14 @@ mod tests {
 
     #[test]
     fn camera_render() {
-        let w = World::default_world();
+        let mut shape_list = ShapeList::new();
+        let w = World::default_world(&mut shape_list);
         let mut c = Camera::new(11, 11, PI/2.0);
         let from = point(0.0, 0.0, -5.0);
         let to = point(0.0, 0.0, 0.0);
         let up = vector(0.0, 1.0, 0.0);
         c.transform = view_transform(from, to, up);
-        let image = c.render(w);
+        let image = c.render(w, &mut shape_list);
         assert_eq!(image.pixel_at(5, 5), &Color::new(0.38066, 0.47583, 0.2855));
     }
 }

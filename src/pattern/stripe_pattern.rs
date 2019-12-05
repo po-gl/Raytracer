@@ -65,6 +65,7 @@ mod tests {
     use crate::shape::sphere::Sphere;
     use crate::shape::Shape;
     use crate::transformation::{scaling, translation};
+    use crate::shape::shape_list::ShapeList;
 
     #[test]
     fn pattern_creation() {
@@ -99,23 +100,24 @@ mod tests {
 
     #[test]
     fn pattern_transformations() {
+        let mut shape_list = ShapeList::new();
         // Transform object
-        let mut object = Sphere::new();
-        object.set_transform(scaling(2.0, 2.0, 2.0));
+        let mut object = Sphere::new(&mut shape_list);
+        object.set_transform(scaling(2.0, 2.0, 2.0), &mut shape_list);
         let pattern = StripePattern::new(Color::white(), Color::black());
         let c = pattern.pattern_at_object(Box::new(object), &point(1.5, 0.0, 0.0));
         assert_eq!(c, Color::white());
 
         // Transform pattern
-        let object = Sphere::new();
+        let object = Sphere::new(&mut shape_list);
         let mut pattern = StripePattern::new(Color::white(), Color::black());
         pattern.set_transform(scaling(2.0, 2.0, 2.0));
         let c = pattern.pattern_at_object(Box::new(object), &point(1.5, 0.0, 0.0));
         assert_eq!(c, Color::white());
 
         // Both object and pattern transforms
-        let mut object = Sphere::new();
-        object.set_transform(scaling(2.0, 2.0, 2.0));
+        let mut object = Sphere::new(&mut shape_list);
+        object.set_transform(scaling(2.0, 2.0, 2.0), &mut shape_list);
         let mut pattern = StripePattern::new(Color::white(), Color::black());
         pattern.set_transform(translation(0.5, 0.0, 0.0));
         let c = pattern.pattern_at_object(Box::new(object), &point(2.5, 0.0, 0.0));

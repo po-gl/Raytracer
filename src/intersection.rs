@@ -7,6 +7,7 @@ use crate::ray::Ray;
 use crate::tuple::Tuple;
 use crate::shape::Shape;
 use crate::{tuple, FLOAT_THRESHOLD, shape};
+use crate::shape::shape_list::ShapeList;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Intersection<T> {
@@ -63,15 +64,15 @@ pub fn hit<T>(intersections: Vec<Intersection<T>>) -> Option<Intersection<T>> {
 }
 
 pub fn prepare_computations_single_intersection(intersection: Intersection<Box<dyn Shape>>,
-                                                ray: &Ray) -> PrecomputedData<Box<dyn Shape>> {
-    prepare_computations(intersection.clone(), ray, vec![intersection])
+                                                ray: &Ray, shape_list: &mut ShapeList) -> PrecomputedData<Box<dyn Shape>> {
+    prepare_computations(intersection.clone(), ray, vec![intersection], shape_list)
 }
 
 pub fn prepare_computations(intersection: Intersection<Box<dyn Shape>>, ray: &Ray,
-                            intersections: Vec<Intersection<Box<dyn Shape>>>) -> PrecomputedData<Box<dyn Shape>> {
+                            intersections: Vec<Intersection<Box<dyn Shape>>>, shape_list: &mut ShapeList) -> PrecomputedData<Box<dyn Shape>> {
 
     let point = ray.position(intersection.t.value());
-    let mut normalv =  shape::normal_at(intersection.object.clone(), point);
+    let mut normalv =  shape::normal_at(intersection.object.clone(), point, shape_list);
     let eyev = -ray.direction;
     let inside = Float(tuple::dot(&normalv, &eyev)) < Float(0.0);
 
@@ -173,10 +174,12 @@ mod tests {
     use crate::shape::plane::Plane;
     use crate::material::Material;
     use crate::transformation::{scaling, translation};
+    use crate::shape::shape_list::ShapeList;
 
     #[test]
     fn intersection_creation() {
-        let s = Sphere::new();
+        let mut shape_list = ShapeList::new();
+        let s = Sphere::new(&mut shape_list);
         let i = Intersection::new(3.5, &s);
         assert_eq!(i.t, 3.5);
         assert_eq!(i.object, &s);
@@ -184,7 +187,8 @@ mod tests {
 
     #[test]
     fn intersection_aggregation() {
-        let s = Sphere::new();
+        let mut shape_list = ShapeList::new();
+        let s = Sphere::new(&mut shape_list);
         let i1 = Intersection::new(1.0, &s);
         let i2 = Intersection::new(2.0, &s);
         let xs = vec![i1, i2];
@@ -195,7 +199,8 @@ mod tests {
 
     #[test]
     fn intersection_hits() {
-        let s = Sphere::new();
+        let mut shape_list = ShapeList::new();
+        let s = Sphere::new(&mut shape_list);
         let i1 = Intersection::new(1.0, &s);
         let i2 = Intersection::new(2.0, &s);
         let mut xs = vec![i1, i2];
@@ -203,7 +208,7 @@ mod tests {
         let i = hit(xs);
         assert_eq!(i, Some(i1));
 
-        let s = Sphere::new();
+        let s = Sphere::new(&mut shape_list);
         let i1 = Intersection::new(-1.0, &s);
         let i2 = Intersection::new(1.0, &s);
         let mut xs = vec![i1, i2];
@@ -211,7 +216,7 @@ mod tests {
         let i = hit(xs);
         assert_eq!(i, Some(i2));
 
-        let s = Sphere::new();
+        let s = Sphere::new(&mut shape_list);
         let i1 = Intersection::new(-2.0, &s);
         let i2 = Intersection::new(-1.0, &s);
         let mut xs = vec![i1, i2];
@@ -219,7 +224,7 @@ mod tests {
         let i = hit(xs);
         assert_eq!(i, None);
 
-        let s = Sphere::new();
+        let s = Sphere::new(&mut shape_list);
         let i1 = Intersection::new(5.0, &s);
         let i2 = Intersection::new(7.0, &s);
         let i3 = Intersection::new(-3.0, &s);
@@ -232,63 +237,67 @@ mod tests {
 
     #[test]
     fn intersection_prep() {
+        let mut shape_list = ShapeList::new();
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
-        let shape: Box<dyn Shape> = Box::new(Sphere::new());
+        let shape: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
         let i = Intersection::new(4.0, shape);
         let i_clone = i.clone();
-        let comps = prepare_computations_single_intersection(i, &r);
+        let comps = prepare_computations_single_intersection(i, &r, &mut shape_list);
         assert_eq!(&comps.t, &i_clone.t);
-//        assert_eq!(comps.object, Box::new(Sphere::new()));
+//        assert_eq!(comps.object, Box::new(Sphere::new(&mut shape_list)));
         assert_eq!(comps.point, point(0.0, 0.0, -1.0));
         assert_eq!(comps.eyev, vector(0.0, 0.0, -1.0));
         assert_eq!(comps.normalv, vector(0.0, 0.0, -1.0));
 
         // If the hit occurs outside of the object
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
-        let shape: Box<dyn Shape> = Box::new(Sphere::new());
+        let shape: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
         let i = Intersection::new(4.0, shape);
-        let comps = prepare_computations_single_intersection(i, &r);
+        let comps = prepare_computations_single_intersection(i, &r, &mut shape_list);
         assert_eq!(comps.inside, false);
 
         // If the hit occurs inside the object
         let r = Ray::new(point(0.0, 0.0, 0.0), vector(0.0, 0.0, 1.0));
-        let shape: Box<dyn Shape> = Box::new(Sphere::new());
+        let shape: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
         let i = Intersection::new(4.0, shape);
-        let comps = prepare_computations_single_intersection(i, &r);
+        let comps = prepare_computations_single_intersection(i, &r, &mut shape_list);
         assert_eq!(comps.inside, true);
         assert_eq!(comps.normalv, vector(0.0, 0.0, -1.0)); // inverted from (0, 0, 1)
     }
 
     #[test]
     fn intersection_over_point() {
+        let mut shape_list = ShapeList::new();
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
-        let mut s1 = Sphere::new();
+        let mut s1 = Sphere::new(&mut shape_list);
         s1.transform = transformation::translation(0.0, 0.0, 1.0);
         let shape: Box<dyn Shape> = Box::new(s1);
         let i = Intersection::new(5.0, shape);
-        let comps = prepare_computations_single_intersection(i, &r);
+        let comps = prepare_computations_single_intersection(i, &r, &mut shape_list);
         assert!(comps.over_point.z < Float(-FLOAT_THRESHOLD/2.0));
         assert!(comps.point.z > comps.over_point.z);
     }
 
     #[test]
     fn intersection_reflection() {
-        let shape: Box<dyn Shape> = Box::new(Plane::new());
+        let mut shape_list = ShapeList::new();
+        let shape: Box<dyn Shape> = Box::new(Plane::new(&mut shape_list));
         let r = Ray::new(point(0.0, 1.0, -1.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
         let i = Intersection::new(2.0f64.sqrt(), shape);
-        let comps = prepare_computations_single_intersection(i, &r);
+        let comps = prepare_computations_single_intersection(i, &r, &mut shape_list);
         assert_eq!(comps.reflectv, vector(0.0, 2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0))
     }
 
     #[test]
     fn intersection_refraction() {
-        let mut a = Sphere::new_with_material(Material::glass());
+        let mut shape_list = ShapeList::new();
+        let mut a = Sphere::new_with_material(Material::glass(), &mut shape_list);
         a.transform = scaling(2.0, 2.0, 2.0);
         a.material.refractive_index = Float(1.5);
-        let mut b = Sphere::new_with_material(Material::glass());
+        let mut b = Sphere::new_with_material(Material::glass(), &mut shape_list);
         b.transform = translation(0.0, 0.0, -0.25);
         b.material.refractive_index = Float(2.0);
-        let mut c = Sphere::new_with_material(Material::glass());
+        let mut c = Sphere::new_with_material(Material::glass(), &mut shape_list);
         c.transform = translation(0.0, 0.0, 0.25);
         c.material.refractive_index = Float(2.5);
 
@@ -316,7 +325,7 @@ mod tests {
         ];
 
         for i in 0..n_pairs.len() {
-            let comps = prepare_computations(xs[i].clone(), &r, xs.clone());
+            let comps = prepare_computations(xs[i].clone(), &r, xs.clone(), &mut shape_list);
             assert_eq!(comps.n1, Float(n_pairs[i].0));
             assert_eq!(comps.n2, Float(n_pairs[i].1));
         }
@@ -324,57 +333,61 @@ mod tests {
 
     #[test]
     fn intersection_refraction_under_point() {
+        let mut shape_list = ShapeList::new();
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
-        let mut a = Sphere::new_with_material(Material::glass());
+        let mut a = Sphere::new_with_material(Material::glass(), &mut shape_list);
         a.transform = translation(0.0, 0.0, 1.0);
         let shape: Box<dyn Shape> = Box::new(a.clone());
         let i = Intersection::new(5.0, shape);
         let xs = vec![i.clone()];
-        let comps = prepare_computations(i.clone(), &r, xs.clone());
+        let comps = prepare_computations(i.clone(), &r, xs.clone(), &mut shape_list);
         assert!(comps.under_point.z > Float(FLOAT_THRESHOLD/2.0));
         assert!(comps.point.z < comps.under_point.z);
     }
 
     #[test]
     fn intersection_schlick_total_internal_reflection() {
-        let a = Sphere::new_with_material(Material::glass());
+        let mut shape_list = ShapeList::new();
+        let a = Sphere::new_with_material(Material::glass(), &mut shape_list);
         let shape: Box<dyn Shape> = Box::new(a.clone());
         let r = Ray::new(point(0.0, 0.0, 2.0f64.sqrt()/2.0), vector(0.0, 1.0, 0.0));
         let xs = vec![
             Intersection::new(-2.0f64.sqrt()/2.0, shape.clone()),
             Intersection::new(2.0f64.sqrt()/2.0, shape.clone()),
         ];
-        let comps = prepare_computations(xs[1].clone(), &r, xs.clone());
+        let comps = prepare_computations(xs[1].clone(), &r, xs.clone(), &mut shape_list);
         let reflectance = schlick(comps);
         assert_eq!(reflectance, 1.0);
     }
 
     #[test]
     fn intersection_schlick_perpendicular() {
+        let mut shape_list = ShapeList::new();
         // reflectance should be small when a ray strikes at a perpendicular angle
-        let a = Sphere::new_with_material(Material::glass());
+        let a = Sphere::new_with_material(Material::glass(), &mut shape_list);
         let shape: Box<dyn Shape> = Box::new(a.clone());
         let r = Ray::new(point(0.0, 0.0, 0.0), vector(0.0, 1.0, 0.0));
         let xs = vec![
             Intersection::new(-1.0, shape.clone()),
             Intersection::new(1.0, shape.clone()),
         ];
-        let comps = prepare_computations(xs[1].clone(), &r, xs.clone());
+        let comps = prepare_computations(xs[1].clone(), &r, xs.clone(), &mut shape_list);
         let reflectance = schlick(comps);
         assert_eq!(reflectance, 0.04);
     }
 
     #[test]
     fn intersection_schlick_significant() {
+        let mut shape_list = ShapeList::new();
         // When n2 > n1 and the ray strikes at a small angle,
         // reflectance should be significant
-        let a = Sphere::new_with_material(Material::glass());
+        let a = Sphere::new_with_material(Material::glass(), &mut shape_list);
         let shape: Box<dyn Shape> = Box::new(a.clone());
         let r = Ray::new(point(0.0, 0.99, -2.0), vector(0.0, 0.0, 1.0));
         let xs = vec![
             Intersection::new(1.8589, shape.clone()),
         ];
-        let comps = prepare_computations(xs[0].clone(), &r, xs.clone());
+        let comps = prepare_computations(xs[0].clone(), &r, xs.clone(), &mut shape_list);
         let reflectance = schlick(comps);
         assert_eq!(reflectance, 0.48873);
     }

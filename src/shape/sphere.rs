@@ -3,7 +3,6 @@
 
 use crate::shape::Shape;
 use crate::ray::Ray;
-use crate::shape;
 use crate::tuple;
 use crate::intersection::Intersection;
 use crate::matrix::Matrix4;
@@ -12,25 +11,30 @@ use crate::float::Float;
 use crate::material::Material;
 use std::any::Any;
 use std::fmt::{Formatter, Error};
+use crate::shape::shape_list::ShapeList;
 
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Sphere {
     pub id: i32,
-    pub parent: Option<Box<dyn Shape>>,
+    pub parent_id: Option<i32>,
     pub transform: Matrix4,
     pub material: Material,
 }
 
 impl Sphere {
-    pub fn new() -> Sphere {
-        let id = shape::get_shape_id();
-        Sphere {id, parent: None, transform: Matrix4::identity(), material: Material::new()}
+    pub fn new(shape_list: &mut ShapeList) -> Sphere {
+        let id = shape_list.get_id();
+        let shape = Sphere {id, parent_id: None, transform: Matrix4::identity(), material: Material::new()};
+        shape_list.push(Box::new(shape.clone()));
+        shape
     }
 
-    pub fn new_with_material(material: Material) -> Sphere {
-        let id = shape::get_shape_id();
-        Sphere{id, parent: None, transform: Matrix4::identity(), material}
+    pub fn new_with_material(material: Material, shape_list: &mut ShapeList) -> Sphere {
+        let id = shape_list.get_id();
+        let shape = Sphere{id, parent_id: None, transform: Matrix4::identity(), material};
+        shape_list.push(Box::new(shape.clone()));
+        shape
     }
 }
 
@@ -59,32 +63,39 @@ impl Shape for Sphere {
         self.id
     }
 
-    fn parent(&self) -> Option<Box<dyn Shape>> {
-        self.parent.clone()
+    fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape>> {
+        if self.parent_id.is_some() {
+            Some(shape_list[self.parent_id.unwrap() as usize].clone())
+        } else {
+            None
+        }
     }
 
-    fn set_parent(&mut self, parent: Box<dyn Shape>) -> Box<dyn Shape>{
-        self.parent = Some(parent);
-        Box::new(self.clone())
+    fn set_parent(&mut self, parent_id: i32, shape_list: &mut ShapeList) {
+        self.parent_id = Some(parent_id);
+        shape_list.update(Box::new(self.clone()));
     }
 
     fn transform(&self) -> Matrix4 {
         self.transform
     }
 
-    fn set_transform(&mut self, transform: Matrix4) {
+
+    fn set_transform(&mut self, transform: Matrix4, shape_list: &mut ShapeList) {
         self.transform = transform;
+        shape_list.update(Box::new(self.clone()))
     }
 
     fn material(&self) -> Material {
         self.material.clone()
     }
 
-    fn set_material(&mut self, material: Material) {
+    fn set_material(&mut self, material: Material, shape_list: &mut ShapeList) {
         self.material = material;
+        shape_list.update(Box::new(self.clone()));
     }
 
-    fn intersects(&self, ray: &Ray) -> Vec<Intersection<Box<dyn Shape>>> {
+    fn intersects(&self, ray: &Ray, _shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape>>> {
         // Transform the ray
         let t_ray = ray.transform(&self.transform.inverse());
         // vector from the sphere's center to the ray origin
@@ -123,48 +134,49 @@ mod tests {
 
     #[test]
     fn sphere_intersection() {
+        let mut shape_list = ShapeList::new();
         // Straight through
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
-        let s = Sphere::new();
-        let xs = s.intersects(&r);
+        let s = Sphere::new(&mut shape_list);
+        let xs = s.intersects(&r, &mut shape_list);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 4.0);
         assert_eq!(xs[1].t, 6.0);
 
         // Just the top (tangent)
         let r = Ray::new(point(0.0, 1.0, -5.0), vector(0.0, 0.0, 1.0));
-        let s = Sphere::new();
-        let xs = s.intersects(&r);
+        let s = Sphere::new(&mut shape_list);
+        let xs = s.intersects(&r, &mut shape_list);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 5.0);
         assert_eq!(xs[1].t, 5.0);
 
         // Missing the sphere
         let r = Ray::new(point(0.0, 2.0, -5.0), vector(0.0, 0.0, 1.0));
-        let s = Sphere::new();
-        let xs = s.intersects(&r);
+        let s = Sphere::new(&mut shape_list);
+        let xs = s.intersects(&r, &mut shape_list);
         assert_eq!(xs.len(), 0);
 
         // Starting inside the sphere
         let r = Ray::new(point(0.0, 0.0, 0.0), vector(0.0, 0.0, 1.0));
-        let s = Sphere::new();
-        let xs = s.intersects(&r);
+        let s = Sphere::new(&mut shape_list);
+        let xs = s.intersects(&r, &mut shape_list);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, -1.0);
         assert_eq!(xs[1].t, 1.0);
 
         // Starting after the sphere (should have negative t value)
         let r = Ray::new(point(0.0, 0.0, 5.0), vector(0.0, 0.0, 1.0));
-        let s = Sphere::new();
-        let xs = s.intersects(&r);
+        let s = Sphere::new(&mut shape_list);
+        let xs = s.intersects(&r, &mut shape_list);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, -6.0);
         assert_eq!(xs[1].t, -4.0);
 
 
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
-        let s = Sphere::new();
-        let xs = s.intersects(&r);
+        let s = Sphere::new(&mut shape_list);
+        let xs = s.intersects(&r, &mut shape_list);
         assert_eq!(xs.len(), 2);
         assert!(s.box_eq(xs[0].object.as_any()));
         assert!(s.box_eq(xs[1].object.as_any()));
@@ -174,39 +186,41 @@ mod tests {
 
     #[test]
     fn sphere_transforms() {
-        let s = Sphere::new();
+        let mut shape_list = ShapeList::new();
+        let s = Sphere::new(&mut shape_list);
         assert_eq!(s.transform, Matrix4::identity());
 
-        let mut s = Sphere::new();
+        let mut s = Sphere::new(&mut shape_list);
         let t = transformation::translation(2.0, 3.0, 4.0);
-        s.set_transform(t);
+        s.set_transform(t, &mut shape_list);
         assert_eq!(s.transform, t);
 
         // Intersecting a scaled sphere with a ray
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
-        let mut s = Sphere::new();
-        s.set_transform(transformation::scaling(2.0, 2.0, 2.0));
-        let xs = s.intersects(&r);
+        let mut s = Sphere::new(&mut shape_list);
+        s.set_transform(transformation::scaling(2.0, 2.0, 2.0), &mut shape_list);
+        let xs = s.intersects(&r, &mut shape_list);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 3.0);
         assert_eq!(xs[1].t, 7.0);
 
         // Intersecting a translated sphere with a ray
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
-        let mut s = Sphere::new();
-        s.set_transform(transformation::translation(5.0, 0.0, 0.0));
-        let xs = s.intersects(&r);
+        let mut s = Sphere::new(&mut shape_list);
+        s.set_transform(transformation::translation(5.0, 0.0, 0.0), &mut shape_list);
+        let xs = s.intersects(&r, &mut shape_list);
         assert_eq!(xs.len(), 0);
     }
 
 
     #[test]
     fn sphere_material() {
-        let s = Sphere::new();
+        let mut shape_list = ShapeList::new();
+        let s = Sphere::new(&mut shape_list);
         let m = s.material;
         assert_eq!(m, Material::new());
 
-        let mut s = Sphere::new();
+        let mut s = Sphere::new(&mut shape_list);
         let mut m = Material::new();
         m.ambient = Float(1.0);
         s.material = m.clone();
@@ -215,7 +229,8 @@ mod tests {
 
     #[test]
     fn sphere_glassy_material() {
-        let s = Sphere::new_with_material(Material::glass());
+        let mut shape_list = ShapeList::new();
+        let s = Sphere::new_with_material(Material::glass(), &mut shape_list);
         assert_eq!(s.transform, Matrix4::identity());
         assert_eq!(s.material.transparency, 1.0);
         assert_eq!(s.material.refractive_index, 1.5);

@@ -23,6 +23,7 @@ pub mod obj_loader {
     use crate::shape::Shape;
     use crate::shape::triangle::Triangle;
     use indicatif::ProgressStyle;
+    use crate::shape::shape_list::ShapeList;
 
     /// A one based array
     #[derive(Debug)]
@@ -65,7 +66,7 @@ pub mod obj_loader {
     }
 
     impl Parser {
-        pub fn parse_obj_file(path: &str) -> io::Result<(Parser)> {
+        pub fn parse_obj_file(path: &str, shape_list: &mut ShapeList) -> io::Result<(Parser)> {
             let file = File::open(path)?;
             let reader = BufReader::new(file);
             let lines: Vec<String> = reader.lines()
@@ -74,7 +75,7 @@ pub mod obj_loader {
             let mut parser = Parser {
                 ignored_lines: 0,
                 vertices: OneVec::new(vec![]),
-                default_group: Group::new(),
+                default_group: Group::new(shape_list),
             };
 
             let pb = indicatif::ProgressBar::new(lines.len() as u64);
@@ -90,7 +91,7 @@ pub mod obj_loader {
                 }
                 match char_res.unwrap() {
                     'v' => parser.parse_vertex(&line),
-                    'f' => parser.parse_face(&line),
+                    'f' => parser.parse_face(&line, shape_list),
                     _ => parser.ignored_lines += 1
                 }
             }
@@ -128,7 +129,7 @@ pub mod obj_loader {
             self.vertices.push(point(vertex[0], vertex[1], vertex[2]))
         }
 
-        fn parse_face(&mut self, line: &String) {
+        fn parse_face(&mut self, line: &String, shape_list: &mut ShapeList) {
             let mut verts: Vec<usize> = vec![];
             let mut str_builder = String::from("");
             let mut should_skip_number: bool = false;
@@ -178,9 +179,9 @@ pub mod obj_loader {
                 for i in 0..verts.len() {
                     polygon.push(self.vertices[verts[i]])
                 }
-                let triangles = Parser::fan_triangulations(polygon);
+                let triangles = Parser::fan_triangulations(polygon, shape_list);
                 for tri in triangles {
-                    self.default_group.add_child(&mut tri.clone());
+                    self.default_group.add_child(&mut tri.clone(), shape_list);
                 }
             }
         }
@@ -203,11 +204,11 @@ pub mod obj_loader {
             }
         }
 
-        fn fan_triangulations(vertices: OneVec<Tuple>) -> Vec<Box<dyn Shape>> {
+        fn fan_triangulations(vertices: OneVec<Tuple>, shape_list: &mut ShapeList) -> Vec<Box<dyn Shape>> {
             let mut triangles: Vec<Box<dyn Shape>> = vec![];
 
             for i in 2..vertices.len() {
-                let triangle: Box<dyn Shape> = Box::new(Triangle::new(vertices[1], vertices[i], vertices[i+1]));
+                let triangle: Box<dyn Shape> = Box::new(Triangle::new(vertices[1], vertices[i], vertices[i+1], shape_list));
                 triangles.push(triangle);
             }
             triangles
@@ -221,25 +222,28 @@ pub mod obj_loader {
 
         #[test]
         fn file_obj_parse_ignore() {
-            let parser = Parser::parse_obj_file("Obj/gibberish.obj");
+            let mut shape_list = ShapeList::new();
+            let parser = Parser::parse_obj_file("Obj/gibberish.obj", &mut shape_list);
             assert_eq!(parser.unwrap().ignored_lines, 5);
         }
 
         #[test]
         fn file_obj_parse_vertex() {
-            let parser = Parser::parse_obj_file("Obj/vertex.obj");
+            let mut shape_list = ShapeList::new();
+            let parser = Parser::parse_obj_file("Obj/vertex.obj", &mut shape_list);
             let uparser = parser.unwrap();
             assert_eq!(uparser.vertices[1], point(-1.0, 1.0, 0.0))
         }
 
         #[test]
         fn file_obj_parse_faces() {
-            let parser = Parser::parse_obj_file("Obj/faces.obj");
+            let mut shape_list = ShapeList::new();
+            let parser = Parser::parse_obj_file("Obj/faces.obj", &mut shape_list);
             let uparser = parser.unwrap();
             assert_eq!(uparser.vertices[1], point(-1.0, 1.0, 0.0));
             let g = uparser.default_group;
-            let t1b = g.shapes[0].clone();
-            let t2b = g.shapes[1].clone();
+            let t1b = shape_list.get(g.children_ids[0]);
+            let t2b = shape_list.get(g.children_ids[1]);
 
             let t1 = t1b.as_any().downcast_ref::<Triangle>().unwrap();
             let t2 = t2b.as_any().downcast_ref::<Triangle>().unwrap();
@@ -254,13 +258,14 @@ pub mod obj_loader {
 
         #[test]
         fn file_obj_parse_polygon() {
-            let parser = Parser::parse_obj_file("Obj/polygon.txt");
+            let mut shape_list = ShapeList::new();
+            let parser = Parser::parse_obj_file("Obj/polygon.txt", &mut shape_list);
             let uparser = parser.unwrap();
             assert_eq!(uparser.vertices[1], point(-1.0, 1.0, 0.0));
             let g = uparser.default_group;
-            let t1b = g.shapes[0].clone();
-            let t2b = g.shapes[1].clone();
-            let t3b = g.shapes[2].clone();
+            let t1b = shape_list.get(g.children_ids[0]);
+            let t2b = shape_list.get(g.children_ids[1]);
+            let t3b = shape_list.get(g.children_ids[2]);
 
             let t1 = t1b.as_any().downcast_ref::<Triangle>().unwrap();
             let t2 = t2b.as_any().downcast_ref::<Triangle>().unwrap();
