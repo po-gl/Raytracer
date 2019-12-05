@@ -19,7 +19,6 @@ pub mod color;
 pub mod material;
 pub mod pattern;
 pub mod shape;
-pub mod csg;
 pub mod light;
 pub mod world;
 pub mod camera;
@@ -101,6 +100,10 @@ fn main() {
         "draw-obj-scene" => {
             println!("Running Example \"{}\"", example);
             examples::draw_obj_scene();
+        },
+        "draw-csg-scene" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_csg_scene();
         },
         _ => println!("No valid argument.")
     }

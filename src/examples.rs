@@ -35,10 +35,78 @@ use crate::shape::group::Group;
 use crate::shape::triangle::Triangle;
 use crate::file::obj_loader::Parser;
 use crate::shape::shape_list::ShapeList;
+use crate::shape::csg::CSG;
 
 //--------------------------------------------------
 //--------------------------------------------------
 
+
+pub fn draw_csg_scene() {
+    // Options
+    let canvas_width = 500;
+    let canvas_height = 500;
+    let fov = PI/3.0;
+
+    // Construct world
+    let mut world = World::new();
+    let shape_list = &mut ShapeList::new();
+
+    let mut floor = Plane::new(shape_list);
+    floor.transform = scaling(10.0, 0.01, 10.0);
+    let mut material = Material::new();
+    material.reflective = Float(0.4);
+    let pattern_a = RingPattern::new(Color::from_hex("726DA8"), Color::from_hex("A0D2DB"));
+    let mut pattern = PerturbedPattern::new(Box::new(pattern_a), 0.15);
+    pattern.set_transform(rotation_y(PI/3.0) * scaling(0.1, 0.1, 0.1));
+    material.set_pattern(Box::new(pattern));
+    material.ambient = Float(0.15);
+    material.specular = Float(0.0);
+    floor.material = material;
+    shape_list.update(Box::new(floor.clone()));
+    world.objects.push(Box::new(floor));
+
+
+    let mut s1 = Cube::new(shape_list);
+    let mut material = Material::new();
+    material.color = Color::from_hex("0000FF");
+    s1.set_material(material, shape_list);
+
+    let mut s2 = Sphere::new(shape_list);
+    s2.set_transform(translation(0.3, 0.5, -0.5) * scaling(1.0, 1.0, 1.0), shape_list);
+    let mut material = Material::new();
+    material.color = Color::from_hex("FFFF00");
+    s2.set_material(material, shape_list);
+
+    let mut csg = CSG::new_with_operation("difference", s1.id(), s2.id(), shape_list);
+    csg.set_transform(translation(0.0, 1.0, 0.0) * scaling(1.0, 1.0, 1.0), shape_list);
+
+    world.objects.push(Box::new(csg));
+
+
+    let p1 = point(0.0, 1.0, 0.0);
+    let p2 = point(-1.0, 0.0, 0.0);
+    let p3 = point(1.0, 0.0, 0.0);
+    let mut tri = Triangle::new(p1, p2, p3, shape_list);
+    tri.transform = translation(0.0, 0.0, 22.0) * scaling(6.0, 6.0, 6.0);
+    let mut material = Material::new();
+    material.color = Color::from_hex("FF0000");
+    tri.material = material;
+    shape_list.update(Box::new(tri.clone()));
+    world.objects.push(Box::new(tri));
+
+    let light = Light::point_light(&point(-10.0, 16.0, -10.0), &Color::new(1.0, 1.0, 1.0));
+    world.lights.push(light);
+
+    // Create camera and render scene
+    let mut camera = Camera::new(canvas_width, canvas_height, fov);
+    camera.transform = view_transform(point(-1.0, 2.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
+
+    let canvas = camera.render(world, shape_list);
+    file::write_to_file(canvas.to_ppm(), String::from("csg_scene.ppm"))
+}
+
+
+//--------------------------------------------------
 
 pub fn draw_obj_scene() {
     // Options
