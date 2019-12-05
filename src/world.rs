@@ -98,14 +98,6 @@ impl World {
         let reflected = self.reflected_color_impl(comps.clone(), remaining, shape_list);
         let refracted = self.refracted_color_impl(comps.clone(), remaining, shape_list);
 
-//        let material: Material;
-//        let parent = comps.object.parent(shape_list);
-//        if parent != None {
-//            material = parent.unwrap().material();
-//        } else {
-//            material = comps.object.material();
-//        }
-
         let surface = light::lighting(&comps.object.material(), Some(comps.object.clone()), &self.lights[0], &comps.point, &comps.eyev, &comps.normalv, is_shadowed);
 
         let material = comps.object.material();
