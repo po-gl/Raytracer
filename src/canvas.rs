@@ -4,18 +4,19 @@
 use std::iter::Iterator;
 use super::color::Color;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Canvas {
     pub width: i32,
     pub height: i32,
-    pub pixels: Vec<Vec<Color>>
+    pub pixels: Vec<Vec<Color>>,
+    pub background_color: Color,
 }
 
 impl Canvas {
     pub fn new(width: i32, height: i32) -> Canvas {
         let pixels = (0..height).map(|_| (0..width).map(|_| Color::new(0.0, 0.0, 0.0)).collect()).collect();
 
-        Canvas {width, height, pixels}
+        Canvas {width, height, pixels, background_color: Color::new(0.0, 0.0, 0.0)}
     }
 
     pub fn pixel_at(&self, row: i32, col: i32) -> &Color {
@@ -29,6 +30,25 @@ impl Canvas {
         }
     }
 
+    pub fn combine(canvas_1: Canvas, canvas_2: Canvas) -> Canvas {
+        let mut canvas = Canvas::new(canvas_1.width, canvas_1.height);
+        let background = canvas_1.background_color;
+
+        println!("Canvas width {}", canvas_1.width);
+
+        for j in 0..canvas_1.height {
+            for i in 0..canvas_1.width {
+                let i = i as usize; let j = j as usize;
+                if canvas_1.pixels[i][j] == background && canvas_2.pixels[i][j] != background {
+                    canvas.pixels[i][j] = canvas_2.pixels[i][j];
+                } else if canvas_2.pixels[i][j] == background && canvas_1.pixels[i][j] != background {
+                    canvas.pixels[i][j] = canvas_1.pixels[i][j];
+                }
+            }
+        }
+        canvas
+//        canvas_2
+    }
 
     pub fn to_ppm(&self) -> String {
         let mut str = String::new();
