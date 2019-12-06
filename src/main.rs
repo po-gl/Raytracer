@@ -114,9 +114,17 @@ fn main() {
             println!("Running Example \"{}\"", example);
             examples::draw_soft_shadow_scene();
         },
+        "draw-perturbed-normal-scene" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_perturbed_normal_scene();
+        },
         "draw-fractal-scene" => {
             println!("Running Example \"{}\"", example);
             examples::draw_fractal_scene();
+        },
+        "draw-combine-scene" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_combined_scene();
         },
         _ => println!("No valid argument.")
     }
