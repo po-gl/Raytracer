@@ -100,7 +100,7 @@ pub fn draw_combined_scene() {
 //    material.color = Color::from_hex("FF0000");
 //    material.color = Color::from_hex("FF0000");
 //    material.transparency = Float(0.8);
-    let mut fractal = fractal(material, 3, shape_list);
+    let mut fractal = fractal(material, 2, shape_list);
 //    fractal.set_transform(translation(0.0, 3.0, 0.0) * scaling(1.5, 1.5, 1.5), shape_list);
     fractal.set_transform(translation(1.5, 0.5, -0.5) * scaling(0.5, 0.5, 0.5) * rotation_y(PI/3.0) * rotation_x(-PI/12.0), shape_list);
     world.objects.push(fractal);
@@ -142,8 +142,8 @@ pub fn draw_combined_scene() {
     world.objects.push(Box::new(shape));
 
 
-//    let light = Light::point_light(&point(-10.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0));
-    let light = Light::area_light(&point(-10.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0), 1.0);
+    let light = Light::point_light(&point(-10.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0));
+//    let light = Light::area_light(&point(-10.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0), 1.0);
     world.lights.push(light);
 
     // Create camera and render scene
@@ -232,8 +232,8 @@ pub fn fractal_node(node_group: &mut Group, transform: Matrix4, material: &Mater
 
 pub fn draw_fractal_scene() {
     // Options
-    let canvas_width = 200;
-    let canvas_height = 200;
+    let canvas_width = 1000;
+    let canvas_height = 1000;
     let fov = PI/2.0;
 
     // Construct world
@@ -276,12 +276,12 @@ pub fn draw_fractal_scene() {
 
 
 //    let light = Light::area_light(&point(-2.5, 4.6, -2.5), &Color::new(1.0, 1.0, 1.0), 0.5);
-    let light = Light::point_light(&point(-2.5, 4.6, -2.5), &Color::new(1.0, 1.0, 1.0));
+    let light = Light::point_light(&point(-10.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0));
     world.lights.push(light);
 
     // Create camera and render scene
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
-    camera.transform = view_transform(point(1.7, 5.0, -4.5), point(0.4, 3.0, -0.7), vector(0.0, 2.0, 0.0));
+    camera.transform = view_transform(point(1.7, 6.0, -3.5), point(0.4, 4.5, -0.7), vector(0.0, 1.0, 0.0));
 //    camera.transform = view_transform(point(0.0, 2.0, -2.0), point(0.0, 1.0, 0.0), vector(0.0, 2.0, 0.0));
 
     let canvas = camera.render(world, shape_list);
