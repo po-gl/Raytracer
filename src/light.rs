@@ -12,7 +12,7 @@ use crate::world::World;
 use crate::shape::shape_list::ShapeList;
 use crate::ray::Ray;
 
-const DEFAULT_RAY_COUNT: usize = 100;
+const DEFAULT_RAY_COUNT: usize = 30;
 
 #[derive(Debug, PartialEq)]
 pub struct Light {
