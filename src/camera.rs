@@ -89,35 +89,39 @@ impl Camera {
         image
     }
 
-    pub fn multithead2_render(&self, world: World, shape_list: &mut ShapeList) -> Canvas {
+    pub fn multithead_render(&self, world: World, thread_count: i32, shape_list: &mut ShapeList) -> Canvas {
 
-        // Thread 2
-        let mut image_2 = Canvas::new(self.h_size, self.v_size);
-        let camera_2 = self.clone();
-        let world_2 = world.clone();
-        let mut shape_list_2 = shape_list.clone();
-        let computation_2 = thread::spawn(move|| {
-            for y in 0..camera_2.v_size {
-                for x in 0..camera_2.h_size {
-                    if x % 2 == 1 {
-                        let ray = camera_2.ray_for_pixel(x, y);
-                        let color = world_2.color_at(&ray, &mut shape_list_2);
-                        image_2.write_pixel(y, x, &color);
+        let mut thread_handles = vec![];
+
+        for i in 0..thread_count-1 {
+            let mut thread_image = Canvas::new(self.h_size, self.v_size);
+            let thread_camera = self.clone();
+            let thread_world = world.clone();
+            let mut thread_shape_list = shape_list.clone();
+            let computation = thread::spawn(move|| {
+                for y in 0..thread_camera.v_size {
+                    for x in 0..thread_camera.h_size {
+                        if x % thread_count == i {
+                            let ray = thread_camera.ray_for_pixel(x, y);
+                            let color = thread_world.color_at(&ray, &mut thread_shape_list);
+                            thread_image.write_pixel(y, x, &color);
+                        }
                     }
                 }
-            }
-            image_2
-        });
+                thread_image
+            });
 
-        let pb = indicatif::ProgressBar::new(self.v_size as u64);
-        pb.set_style(ProgressStyle::default_bar()
-            .template("[{elapsed_precise}] {bar:50} {pos:>7}/{len:7} {msg}"));
+            thread_handles.push(computation);
+        }
 
         // Main Thread
         let mut image = Canvas::new(self.h_size, self.v_size);
+        let pb = indicatif::ProgressBar::new(self.v_size as u64);
+        pb.set_style(ProgressStyle::default_bar()
+            .template("[{elapsed_precise}] {bar:50} {pos:>7}/{len:7} {msg}"));
         for y in 0..self.v_size {
             for x in 0..self.h_size {
-                if x % 2 == 0 {
+                if x % thread_count == thread_count-1 {
                     let ray = self.ray_for_pixel(x, y);
                     let color = world.color_at(&ray, shape_list);
                     image.write_pixel(y, x, &color);
@@ -126,10 +130,14 @@ impl Camera {
             pb.inc(1);
         }
 
-        let image_2 = computation_2.join().unwrap();
+        // Combine all images
+        for thread in thread_handles {
+            let thread_image = thread.join().unwrap();
+            image = Canvas::combine(&image, &thread_image);
+        }
         pb.finish_with_message("Finished Rendering!");
 
-        Canvas::combine(image, image_2)
+        image
     }
 }
 
