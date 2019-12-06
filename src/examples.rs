@@ -438,7 +438,7 @@ pub fn draw_soft_shadow_scene() {
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
     camera.transform = view_transform(point(0.4, 2.0, -3.0), point(0.4, 1.0, -0.7), vector(0.0, 1.0, 0.0));
 
-    let canvas = camera.render(world, shape_list);
+    let canvas = camera.multithead_render(world, 4, shape_list);
     file::write_to_file(canvas.to_ppm(), String::from("soft_shadows_scene.ppm"))
 }
 
@@ -1007,8 +1007,8 @@ pub fn draw_refracted_scene() {
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
     camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
 
-//    let canvas = camera.multithead2_render(world, &mut shape_list);
-    let canvas = camera.render(world, &mut shape_list);
+    let canvas = camera.multithead_render(world, 4, &mut shape_list);
+//    let canvas = camera.render(world, &mut shape_list);
     file::write_to_file(canvas.to_ppm(), String::from("refracted_scene.ppm"))
 }
 
