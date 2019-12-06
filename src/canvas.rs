@@ -30,11 +30,9 @@ impl Canvas {
         }
     }
 
-    pub fn combine(canvas_1: Canvas, canvas_2: Canvas) -> Canvas {
+    pub fn combine(canvas_1: &Canvas, canvas_2: &Canvas) -> Canvas {
         let mut canvas = Canvas::new(canvas_1.width, canvas_1.height);
         let background = canvas_1.background_color;
-
-        println!("Canvas width {}", canvas_1.width);
 
         for j in 0..canvas_1.height {
             for i in 0..canvas_1.width {
