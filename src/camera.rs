@@ -9,8 +9,9 @@ use crate::world::World;
 use crate::canvas::Canvas;
 use indicatif::ProgressStyle;
 use crate::shape::shape_list::ShapeList;
+use std::thread;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Camera {
     pub h_size: i32,
     pub v_size: i32,
@@ -86,6 +87,49 @@ impl Camera {
         }
         pb.finish_with_message("Finished Rendering!");
         image
+    }
+
+    pub fn multithead2_render(&self, world: World, shape_list: &mut ShapeList) -> Canvas {
+
+        // Thread 2
+        let mut image_2 = Canvas::new(self.h_size, self.v_size);
+        let camera_2 = self.clone();
+        let world_2 = world.clone();
+        let mut shape_list_2 = shape_list.clone();
+        let computation_2 = thread::spawn(move|| {
+            for y in 0..camera_2.v_size {
+                for x in 0..camera_2.h_size {
+                    if x % 2 == 1 {
+                        let ray = camera_2.ray_for_pixel(x, y);
+                        let color = world_2.color_at(&ray, &mut shape_list_2);
+                        image_2.write_pixel(y, x, &color);
+                    }
+                }
+            }
+            image_2
+        });
+
+        let pb = indicatif::ProgressBar::new(self.v_size as u64);
+        pb.set_style(ProgressStyle::default_bar()
+            .template("[{elapsed_precise}] {bar:50} {pos:>7}/{len:7} {msg}"));
+
+        // Main Thread
+        let mut image = Canvas::new(self.h_size, self.v_size);
+        for y in 0..self.v_size {
+            for x in 0..self.h_size {
+                if x % 2 == 0 {
+                    let ray = self.ray_for_pixel(x, y);
+                    let color = world.color_at(&ray, shape_list);
+                    image.write_pixel(y, x, &color);
+                }
+            }
+            pb.inc(1);
+        }
+
+        let image_2 = computation_2.join().unwrap();
+        pb.finish_with_message("Finished Rendering!");
+
+        Canvas::combine(image, image_2)
     }
 }
 
