@@ -4,6 +4,7 @@
 use crate::float::Float;
 use super::color::Color;
 use crate::pattern::Pattern;
+use noise::Perlin;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Material {
@@ -18,6 +19,7 @@ pub struct Material {
     pub pattern: Option<Box<dyn Pattern>>,
     pub normal_perturb: Option<String>,
     pub normal_perturb_factor: Option<f64>,
+    pub normal_perturb_perlin: Option<CmpPerlin>,
 }
 
 impl Material {
@@ -31,7 +33,7 @@ impl Material {
                   transparency: Float(0.0),
                   refractive_index: Float(1.0),
                   pattern: None, normal_perturb: None,
-                  normal_perturb_factor: None}
+                  normal_perturb_factor: None, normal_perturb_perlin: None}
     }
 
     pub fn set_pattern(&mut self, pattern: Box<dyn Pattern>) {
@@ -50,7 +52,7 @@ impl Material {
             transparency: Float(1.0),
             refractive_index: Float(1.5),
             pattern: None, normal_perturb: None,
-            normal_perturb_factor: None}
+            normal_perturb_factor: None, normal_perturb_perlin: None}
 }
 
 pub fn mirror() -> Material {
@@ -63,7 +65,7 @@ pub fn mirror() -> Material {
             transparency: Float(0.0),
             refractive_index: Float(1.0),
             pattern: None, normal_perturb: None,
-            normal_perturb_factor: None}
+            normal_perturb_factor: None, normal_perturb_perlin: None}
 }
 
 
@@ -135,3 +137,15 @@ mod tests {
     }
 }
 
+
+#[derive(Debug, Clone)]
+pub struct CmpPerlin {
+    pub perlin: Perlin
+}
+
+// To get Perlin to work
+impl PartialEq for CmpPerlin {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}

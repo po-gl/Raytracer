@@ -10,7 +10,7 @@ use std::borrow::BorrowMut;
 /// This is a work-around to implement tree structures with
 /// parents and children referencing each-other
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ShapeList {
     pub shapes: Vec<Box<dyn Shape>>,
 }

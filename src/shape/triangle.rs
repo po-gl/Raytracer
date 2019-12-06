@@ -146,7 +146,7 @@ impl Shape for Triangle {
         let mut normal = self.normal;
         if self.material.normal_perturb.is_some() {
             let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
-                                                          point, self.material.normal_perturb_factor);
+                                                          point, self.material.clone().normal_perturb_factor, self.material.clone().normal_perturb_perlin);
             normal = normal + perturb;
         }
         normal

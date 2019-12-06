@@ -129,7 +129,7 @@ impl Shape for Cube {
             let mut normal = vector(object_point.x.value(), 0.0, 0.0);
             if self.material.normal_perturb.is_some() {
                 let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
-                                                              object_point, self.material.normal_perturb_factor);
+                                                          object_point, self.material.clone().normal_perturb_factor, self.material.clone().normal_perturb_perlin);
                 normal = normal + perturb;
             }
             normal
@@ -137,7 +137,7 @@ impl Shape for Cube {
             let mut normal = vector(0.0, object_point.y.value(), 0.0);
             if self.material.normal_perturb.is_some() {
                 let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
-                                                              object_point, self.material.normal_perturb_factor);
+                                                          object_point, self.material.clone().normal_perturb_factor, self.material.clone().normal_perturb_perlin);
                 normal = normal + perturb;
             }
             normal
@@ -145,7 +145,7 @@ impl Shape for Cube {
             let mut normal = vector(0.0, 0.0, object_point.z.value());
             if self.material.normal_perturb.is_some() {
                 let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
-                                                              object_point, self.material.normal_perturb_factor);
+                                                          object_point, self.material.clone().normal_perturb_factor, self.material.clone().normal_perturb_perlin);
                 normal = normal + perturb;
             }
             normal

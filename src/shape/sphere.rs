@@ -128,7 +128,7 @@ impl Shape for Sphere {
         world_normal.w = Float(0.0);
         if self.material.normal_perturb.is_some() {
             let perturb = NormalPerturber::perturb_normal(self.material.clone().normal_perturb.unwrap(),
-                                                          object_point, self.material.normal_perturb_factor);
+                                                          object_point, self.material.clone().normal_perturb_factor, self.material.clone().normal_perturb_perlin);
             world_normal = world_normal + perturb;
         }
         world_normal.normalize()
