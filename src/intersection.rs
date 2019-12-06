@@ -63,13 +63,13 @@ pub fn hit<T>(intersections: Vec<Intersection<T>>) -> Option<Intersection<T>> {
     }
 }
 
-pub fn prepare_computations_single_intersection(intersection: Intersection<Box<dyn Shape>>,
-                                                ray: &Ray, shape_list: &mut ShapeList) -> PrecomputedData<Box<dyn Shape>> {
+pub fn prepare_computations_single_intersection(intersection: Intersection<Box<dyn Shape + Send>>,
+                                                ray: &Ray, shape_list: &mut ShapeList) -> PrecomputedData<Box<dyn Shape + Send>> {
     prepare_computations(intersection.clone(), ray, vec![intersection], shape_list)
 }
 
-pub fn prepare_computations(intersection: Intersection<Box<dyn Shape>>, ray: &Ray,
-                            intersections: Vec<Intersection<Box<dyn Shape>>>, shape_list: &mut ShapeList) -> PrecomputedData<Box<dyn Shape>> {
+pub fn prepare_computations(intersection: Intersection<Box<dyn Shape + Send>>, ray: &Ray,
+                            intersections: Vec<Intersection<Box<dyn Shape + Send>>>, shape_list: &mut ShapeList) -> PrecomputedData<Box<dyn Shape + Send>> {
 
     let point = ray.position(intersection.t.value());
     let mut normalv =  shape::normal_at(intersection.object.clone(), point, shape_list);
@@ -87,7 +87,7 @@ pub fn prepare_computations(intersection: Intersection<Box<dyn Shape>>, ray: &Ra
     // Calculate n1 and n2 for refractions
     let mut n1 = Float(1.0);
     let mut n2 = Float(1.0);
-    let mut container: Vec<Box<dyn Shape>> = vec![];
+    let mut container: Vec<Box<dyn Shape + Send>> = vec![];
     for inter in &intersections {
         let is_inter_hit = *inter == intersection;
 
@@ -142,7 +142,7 @@ pub fn prepare_computations(intersection: Intersection<Box<dyn Shape>>, ray: &Ra
     }
 }
 
-pub fn schlick(comps: PrecomputedData<Box<dyn Shape>>) -> Float {
+pub fn schlick(comps: PrecomputedData<Box<dyn Shape + Send>>) -> Float {
     // Find cosine of the angle between the eye and normal vectors
     let mut cos = tuple::dot(&comps.eyev, &comps.normalv);
 
@@ -239,7 +239,7 @@ mod tests {
     fn intersection_prep() {
         let mut shape_list = ShapeList::new();
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
-        let shape: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
+        let shape: Box<dyn Shape + Send> = Box::new(Sphere::new(&mut shape_list));
         let i = Intersection::new(4.0, shape);
         let i_clone = i.clone();
         let comps = prepare_computations_single_intersection(i, &r, &mut shape_list);
@@ -251,14 +251,14 @@ mod tests {
 
         // If the hit occurs outside of the object
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
-        let shape: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
+        let shape: Box<dyn Shape + Send> = Box::new(Sphere::new(&mut shape_list));
         let i = Intersection::new(4.0, shape);
         let comps = prepare_computations_single_intersection(i, &r, &mut shape_list);
         assert_eq!(comps.inside, false);
 
         // If the hit occurs inside the object
         let r = Ray::new(point(0.0, 0.0, 0.0), vector(0.0, 0.0, 1.0));
-        let shape: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
+        let shape: Box<dyn Shape + Send> = Box::new(Sphere::new(&mut shape_list));
         let i = Intersection::new(4.0, shape);
         let comps = prepare_computations_single_intersection(i, &r, &mut shape_list);
         assert_eq!(comps.inside, true);
@@ -271,7 +271,7 @@ mod tests {
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
         let mut s1 = Sphere::new(&mut shape_list);
         s1.transform = transformation::translation(0.0, 0.0, 1.0);
-        let shape: Box<dyn Shape> = Box::new(s1);
+        let shape: Box<dyn Shape + Send> = Box::new(s1);
         let i = Intersection::new(5.0, shape);
         let comps = prepare_computations_single_intersection(i, &r, &mut shape_list);
         assert!(comps.over_point.z < Float(-FLOAT_THRESHOLD/2.0));
@@ -281,7 +281,7 @@ mod tests {
     #[test]
     fn intersection_reflection() {
         let mut shape_list = ShapeList::new();
-        let shape: Box<dyn Shape> = Box::new(Plane::new(&mut shape_list));
+        let shape: Box<dyn Shape + Send> = Box::new(Plane::new(&mut shape_list));
         let r = Ray::new(point(0.0, 1.0, -1.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
         let i = Intersection::new(2.0f64.sqrt(), shape);
         let comps = prepare_computations_single_intersection(i, &r, &mut shape_list);
@@ -301,9 +301,9 @@ mod tests {
         c.transform = translation(0.0, 0.0, 0.25);
         c.material.refractive_index = Float(2.5);
 
-        let shape_a: Box<dyn Shape> = Box::new(a.clone());
-        let shape_b: Box<dyn Shape> = Box::new(b.clone());
-        let shape_c: Box<dyn Shape> = Box::new(c.clone());
+        let shape_a: Box<dyn Shape + Send> = Box::new(a.clone());
+        let shape_b: Box<dyn Shape + Send> = Box::new(b.clone());
+        let shape_c: Box<dyn Shape + Send> = Box::new(c.clone());
 
         let r = Ray::new(point(0.0, 0.0, -4.0), vector(0.0, 0.0, 1.0));
         let xs = vec![
@@ -337,7 +337,7 @@ mod tests {
         let r = Ray::new(point(0.0, 0.0, -5.0), vector(0.0, 0.0, 1.0));
         let mut a = Sphere::new_with_material(Material::glass(), &mut shape_list);
         a.transform = translation(0.0, 0.0, 1.0);
-        let shape: Box<dyn Shape> = Box::new(a.clone());
+        let shape: Box<dyn Shape + Send> = Box::new(a.clone());
         let i = Intersection::new(5.0, shape);
         let xs = vec![i.clone()];
         let comps = prepare_computations(i.clone(), &r, xs.clone(), &mut shape_list);
@@ -349,7 +349,7 @@ mod tests {
     fn intersection_schlick_total_internal_reflection() {
         let mut shape_list = ShapeList::new();
         let a = Sphere::new_with_material(Material::glass(), &mut shape_list);
-        let shape: Box<dyn Shape> = Box::new(a.clone());
+        let shape: Box<dyn Shape + Send> = Box::new(a.clone());
         let r = Ray::new(point(0.0, 0.0, 2.0f64.sqrt()/2.0), vector(0.0, 1.0, 0.0));
         let xs = vec![
             Intersection::new(-2.0f64.sqrt()/2.0, shape.clone()),
@@ -365,7 +365,7 @@ mod tests {
         let mut shape_list = ShapeList::new();
         // reflectance should be small when a ray strikes at a perpendicular angle
         let a = Sphere::new_with_material(Material::glass(), &mut shape_list);
-        let shape: Box<dyn Shape> = Box::new(a.clone());
+        let shape: Box<dyn Shape + Send> = Box::new(a.clone());
         let r = Ray::new(point(0.0, 0.0, 0.0), vector(0.0, 1.0, 0.0));
         let xs = vec![
             Intersection::new(-1.0, shape.clone()),
@@ -382,7 +382,7 @@ mod tests {
         // When n2 > n1 and the ray strikes at a small angle,
         // reflectance should be significant
         let a = Sphere::new_with_material(Material::glass(), &mut shape_list);
-        let shape: Box<dyn Shape> = Box::new(a.clone());
+        let shape: Box<dyn Shape + Send> = Box::new(a.clone());
         let r = Ray::new(point(0.0, 0.99, -2.0), vector(0.0, 0.0, 1.0));
         let xs = vec![
             Intersection::new(1.8589, shape.clone()),

@@ -12,7 +12,7 @@ use std::borrow::BorrowMut;
 
 #[derive(Debug, Clone)]
 pub struct ShapeList {
-    pub shapes: Vec<Box<dyn Shape>>,
+    pub shapes: Vec<Box<dyn Shape + Send>>,
 }
 
 impl ShapeList {
@@ -24,7 +24,7 @@ impl ShapeList {
         self.shapes.len() as i32
     }
 
-    pub fn push(&mut self, val: Box<dyn Shape>) {
+    pub fn push(&mut self, val: Box<dyn Shape + Send>) {
         self.shapes.push(val);
     }
 
@@ -32,17 +32,17 @@ impl ShapeList {
         self.shapes.len()
     }
 
-    pub fn get(&self, id: i32) -> Box<dyn Shape> {
+    pub fn get(&self, id: i32) -> Box<dyn Shape + Send> {
         self.shapes[id as usize].clone()
     }
 
-    pub fn update(&mut self, val: Box<dyn Shape>) {
+    pub fn update(&mut self, val: Box<dyn Shape + Send>) {
         std::mem::replace(self.shapes[val.id() as usize].borrow_mut(), val);
     }
 }
 
 impl Index<usize> for ShapeList {
-    type Output = Box<dyn Shape>;
+    type Output = Box<dyn Shape + Send>;
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.shapes[index]

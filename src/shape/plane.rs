@@ -54,7 +54,7 @@ impl Shape for Plane {
         write!(f, "Box {:?}", self)
     }
 
-    fn shape_clone(&self) -> Box<dyn Shape> {
+    fn shape_clone(&self) -> Box<dyn Shape + Send> {
         Box::new(self.clone())
     }
 
@@ -62,7 +62,7 @@ impl Shape for Plane {
         self.id
     }
 
-    fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape>> {
+    fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape + Send>> {
         if self.parent_id.is_some() {
             Some(shape_list[self.parent_id.unwrap() as usize].clone())
         } else {
@@ -98,7 +98,7 @@ impl Shape for Plane {
         shape_list.update(Box::new(self.clone()))
     }
 
-    fn intersects(&self, ray: &Ray, _shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape>>> {
+    fn intersects(&self, ray: &Ray, _shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape + Send>>> {
         // Transform the ray
         let t_ray = ray.transform(&self.transform.inverse());
 

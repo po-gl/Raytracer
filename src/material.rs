@@ -16,7 +16,7 @@ pub struct Material {
     pub reflective: Float,
     pub transparency: Float,
     pub refractive_index: Float,
-    pub pattern: Option<Box<dyn Pattern>>,
+    pub pattern: Option<Box<dyn Pattern + Send>>,
     pub normal_perturb: Option<String>,
     pub normal_perturb_factor: Option<f64>,
     pub normal_perturb_perlin: Option<CmpPerlin>,
@@ -36,7 +36,7 @@ impl Material {
                   normal_perturb_factor: None, normal_perturb_perlin: None}
     }
 
-    pub fn set_pattern(&mut self, pattern: Box<dyn Pattern>) {
+    pub fn set_pattern(&mut self, pattern: Box<dyn Pattern + Send>) {
         self.pattern = Some(pattern)
     }
 

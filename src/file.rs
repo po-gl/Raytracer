@@ -24,6 +24,7 @@ pub mod obj_loader {
     use crate::shape::triangle::Triangle;
     use indicatif::ProgressStyle;
     use crate::shape::shape_list::ShapeList;
+    use crate::material::Material;
 
     /// A one based array
     #[derive(Debug)]
@@ -204,11 +205,12 @@ pub mod obj_loader {
             }
         }
 
-        fn fan_triangulations(vertices: OneVec<Tuple>, shape_list: &mut ShapeList) -> Vec<Box<dyn Shape>> {
-            let mut triangles: Vec<Box<dyn Shape>> = vec![];
+        fn fan_triangulations(vertices: OneVec<Tuple>, shape_list: &mut ShapeList) -> Vec<Box<dyn Shape + Send>> {
+            let mut triangles: Vec<Box<dyn Shape + Send>> = vec![];
+            let material = Material::glass();
 
             for i in 2..vertices.len() {
-                let triangle: Box<dyn Shape> = Box::new(Triangle::new(vertices[1], vertices[i], vertices[i+1], shape_list));
+                let triangle: Box<dyn Shape + Send> = Box::new(Triangle::new_with_material(vertices[1], vertices[i], vertices[i+1], material.clone(), shape_list));
                 triangles.push(triangle);
             }
             triangles

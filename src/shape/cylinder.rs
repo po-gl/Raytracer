@@ -53,7 +53,7 @@ impl Cylinder {
         (x * x + z * z) <= Float(1.0)
     }
 
-    fn intersect_caps(&self, ray: &Ray, xs: &mut Vec<Intersection<Box<dyn Shape>>>) {
+    fn intersect_caps(&self, ray: &Ray, xs: &mut Vec<Intersection<Box<dyn Shape + Send>>>) {
         if !self.closed {
             return // If a cylinder isn't closed, just return
         }
@@ -89,7 +89,7 @@ impl Shape for Cylinder {
         write!(f, "Box {:?}", self)
     }
 
-    fn shape_clone(&self) -> Box<dyn Shape> {
+    fn shape_clone(&self) -> Box<dyn Shape + Send> {
         Box::new(self.clone())
     }
 
@@ -97,7 +97,7 @@ impl Shape for Cylinder {
         self.id
     }
 
-    fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape>> {
+    fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape + Send>> {
         if self.parent_id.is_some() {
             Some(shape_list[self.parent_id.unwrap() as usize].clone())
         } else {
@@ -133,7 +133,7 @@ impl Shape for Cylinder {
         shape_list.update(Box::new(self.clone()))
     }
 
-    fn intersects(&self, ray: &Ray, _shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape>>> {
+    fn intersects(&self, ray: &Ray, _shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape + Send>>> {
         // Transform the ray
         let t_ray = ray.transform(&self.transform.inverse());
 
@@ -142,7 +142,7 @@ impl Shape for Cylinder {
         // Ray is parallel to y axis
         if a == Float(0.0) {
             // The walls are not intersected but the caps may be
-            let mut xs: Vec<Intersection<Box<dyn Shape>>> = vec![];
+            let mut xs: Vec<Intersection<Box<dyn Shape + Send>>> = vec![];
             self.intersect_caps(&t_ray, &mut xs);
             return xs
         }
@@ -165,7 +165,7 @@ impl Shape for Cylinder {
                 std::mem::swap(&mut t0, &mut t1);
             }
 
-            let mut xs: Vec<Intersection<Box<dyn Shape>>> = vec![];
+            let mut xs: Vec<Intersection<Box<dyn Shape + Send>>> = vec![];
 
             let y0 = t_ray.origin.y.value() + t0 * t_ray.direction.y.value();
             let y1 = t_ray.origin.y.value() + t1 * t_ray.direction.y.value();

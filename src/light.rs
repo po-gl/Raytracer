@@ -14,7 +14,7 @@ use crate::ray::Ray;
 
 const DEFAULT_RAY_COUNT: usize = 100;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Light {
     pub position: Tuple,
     pub intensity: Color,
@@ -74,7 +74,7 @@ impl Light {
 
 
     pub fn lighting(material: &Material,
-                    object: Option<Box<dyn Shape>>,
+                    object: Option<Box<dyn Shape + Send>>,
                     world: Option<&World>,
                     light_source: &Light,
                     point: &Tuple,

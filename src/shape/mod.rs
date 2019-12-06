@@ -45,11 +45,11 @@ pub trait Shape: Any {
 
     fn debug_fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error>;
 
-    fn shape_clone(&self) -> Box<dyn Shape>;
+    fn shape_clone(&self) -> Box<dyn Shape + Send>;
 
     fn id(&self) -> i32;
 
-    fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape>>;
+    fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape + Send>>;
 
     fn includes(&self, id: i32) -> bool;
 
@@ -63,13 +63,13 @@ pub trait Shape: Any {
 
     fn set_material(&mut self, material: Material, shape_list: &mut ShapeList);
 
-    fn intersects(&self, ray: &Ray, shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape>>>;
+    fn intersects(&self, ray: &Ray, shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape + Send>>>;
 
     fn normal_at(&self, point: &Tuple) -> Tuple;
 }
 
-impl PartialEq for Box<dyn Shape> {
-    fn eq(&self, other: &Box<dyn Shape>) -> bool {
+impl PartialEq for Box<dyn Shape + Send> {
+    fn eq(&self, other: &Box<dyn Shape + Send>) -> bool {
 //        self.box_eq(other.as_any())
         self.id() == other.id() &&
         self.material() == other.material() &&
@@ -77,13 +77,13 @@ impl PartialEq for Box<dyn Shape> {
     }
 }
 
-impl Debug for Box<dyn Shape> {
+impl Debug for Box<dyn Shape + Send> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         self.debug_fmt(f)
     }
 }
 
-impl Clone for Box<dyn Shape> {
+impl Clone for Box<dyn Shape + Send> {
     fn clone(&self) -> Self {
         self.shape_clone()
     }
@@ -91,7 +91,7 @@ impl Clone for Box<dyn Shape> {
 
 /// Recursively converts a point to its parent's point until
 /// getting a world space point
-pub fn world_to_object(shape: Box<dyn Shape>, point: Tuple, shape_list: &mut ShapeList) -> Tuple {
+pub fn world_to_object(shape: Box<dyn Shape + Send>, point: Tuple, shape_list: &mut ShapeList) -> Tuple {
     let mut new_point = point;
     if shape.parent(shape_list) != None {
         new_point = world_to_object(shape.parent(shape_list).unwrap(), point, shape_list);
@@ -100,7 +100,7 @@ pub fn world_to_object(shape: Box<dyn Shape>, point: Tuple, shape_list: &mut Sha
 }
 
 /// Recursively convert a normal to world space
-pub fn normal_to_world(shape: Box<dyn Shape>, normal: Tuple, shape_list: &mut ShapeList) -> Tuple {
+pub fn normal_to_world(shape: Box<dyn Shape + Send>, normal: Tuple, shape_list: &mut ShapeList) -> Tuple {
     let mut new_normal: Tuple = shape.transform().inverse().transpose() * normal;
     new_normal.w = Float(0.0);
     new_normal = new_normal.normalize();
@@ -112,7 +112,7 @@ pub fn normal_to_world(shape: Box<dyn Shape>, normal: Tuple, shape_list: &mut Sh
     return new_normal
 }
 
-pub fn normal_at(shape: Box<dyn Shape>, world_point: Tuple, shape_list: &mut ShapeList) -> Tuple {
+pub fn normal_at(shape: Box<dyn Shape + Send>, world_point: Tuple, shape_list: &mut ShapeList) -> Tuple {
     let local_point = world_to_object(shape.clone(), world_point, shape_list);
     let local_normal = shape.normal_at(&local_point);
     return normal_to_world(shape, local_normal, shape_list);
@@ -171,11 +171,11 @@ mod tests {
     #[test]
     fn shape_world_to_object() {
         let mut shape_list = ShapeList::new();
-        let mut g1: Box<dyn Shape> = Box::new(Group::new(&mut shape_list));
+        let mut g1: Box<dyn Shape + Send> = Box::new(Group::new(&mut shape_list));
         g1.set_transform(rotation_y(PI/2.0), &mut shape_list);
-        let mut g2: Box<dyn Shape> = Box::new(Group::new(&mut shape_list));
+        let mut g2: Box<dyn Shape + Send> = Box::new(Group::new(&mut shape_list));
         g2.set_transform(scaling(2.0, 2.0, 2.0), &mut shape_list);
-        let mut s: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
+        let mut s: Box<dyn Shape + Send> = Box::new(Sphere::new(&mut shape_list));
         s.set_transform(translation(5.0, 0.0, 0.0), &mut shape_list);
 
         s.set_parent(g2.id(), &mut shape_list);
@@ -188,11 +188,11 @@ mod tests {
     #[test]
     fn shape_normal_to_world() {
         let mut shape_list = ShapeList::new();
-        let mut g1: Box<dyn Shape> = Box::new(Group::new(&mut shape_list));
+        let mut g1: Box<dyn Shape + Send> = Box::new(Group::new(&mut shape_list));
         g1.set_transform(rotation_y(PI/2.0), &mut shape_list);
-        let mut g2: Box<dyn Shape> = Box::new(Group::new(&mut shape_list));
+        let mut g2: Box<dyn Shape + Send> = Box::new(Group::new(&mut shape_list));
         g2.set_transform(scaling(1.0, 2.0, 3.0), &mut shape_list);
-        let mut s: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
+        let mut s: Box<dyn Shape + Send> = Box::new(Sphere::new(&mut shape_list));
         s.set_transform(translation(5.0, 0.0, 0.0), &mut shape_list);
 
         s.set_parent(g2.id(), &mut shape_list);
@@ -205,11 +205,11 @@ mod tests {
     #[test]
     fn shape_normal_at_child() {
         let mut shape_list = ShapeList::new();
-        let mut g1: Box<dyn Shape> = Box::new(Group::new(&mut shape_list));
+        let mut g1: Box<dyn Shape + Send> = Box::new(Group::new(&mut shape_list));
         g1.set_transform(rotation_y(PI/2.0), &mut shape_list);
-        let mut g2: Box<dyn Shape> = Box::new(Group::new(&mut shape_list));
+        let mut g2: Box<dyn Shape + Send> = Box::new(Group::new(&mut shape_list));
         g2.set_transform(scaling(1.0, 2.0, 3.0), &mut shape_list);
-        let mut s: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
+        let mut s: Box<dyn Shape + Send> = Box::new(Sphere::new(&mut shape_list));
         s.set_transform(translation(5.0, 0.0, 0.0), &mut shape_list);
 
         s.set_parent(g2.id(), &mut shape_list);

@@ -10,13 +10,13 @@ use std::any::Any;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct BlendedPattern {
-    pub a: Option<Box<dyn Pattern>>, // First pattern to blend
-    pub b: Option<Box<dyn Pattern>>, // Second pattern to blend
+    pub a: Option<Box<dyn Pattern + Send>>, // First pattern to blend
+    pub b: Option<Box<dyn Pattern + Send>>, // Second pattern to blend
     pub transform: Matrix4,
 }
 
 impl BlendedPattern {
-    pub fn new(pattern_a: Box<dyn Pattern>, pattern_b: Box<dyn Pattern>) -> BlendedPattern {
+    pub fn new(pattern_a: Box<dyn Pattern + Send>, pattern_b: Box<dyn Pattern + Send>) -> BlendedPattern {
         BlendedPattern { a: Some(pattern_a), b: Some(pattern_b), transform: Matrix4::identity() }
     }
 }
@@ -34,7 +34,7 @@ impl Pattern for BlendedPattern {
         write!(f, "Box {:?}", self)
     }
 
-    fn pattern_clone(&self) -> Box<dyn Pattern> {
+    fn pattern_clone(&self) -> Box<dyn Pattern + Send> {
         Box::new(self.clone())
     }
 

@@ -65,8 +65,8 @@ impl CSG {
         }
     }
 
-    pub fn filter_intersects(&self, xs: &Vec<Intersection<Box<dyn Shape>>>,
-                             shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape>>> {
+    pub fn filter_intersects(&self, xs: &Vec<Intersection<Box<dyn Shape + Send>>>,
+                             shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape + Send>>> {
 
         // Both children outside
         let mut inl = false;
@@ -111,7 +111,7 @@ impl Shape for CSG {
         write!(f, "Box {:?}", self)
     }
 
-    fn shape_clone(&self) -> Box<dyn Shape> {
+    fn shape_clone(&self) -> Box<dyn Shape + Send> {
         Box::new(self.clone())
     }
 
@@ -119,7 +119,7 @@ impl Shape for CSG {
         self.id
     }
 
-    fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape>> {
+    fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape + Send>> {
         if self.parent_id.is_some() {
             Some(shape_list[self.parent_id.unwrap() as usize].clone())
         } else {
@@ -154,7 +154,7 @@ impl Shape for CSG {
         shape_list.update(Box::new(self.clone()))
     }
 
-    fn intersects(&self, ray: &Ray, shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape>>> {
+    fn intersects(&self, ray: &Ray, shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape + Send>>> {
         // Transform the ray
         let t_ray = ray.transform(&self.transform.inverse());
 
@@ -287,7 +287,7 @@ mod tests {
             let s1 = Sphere::new(shape_list);
             let s2 = Cube::new(shape_list);
             let c = CSG::new_with_operation(table[i].0, s1.id(), s2.id(), shape_list);
-            let xs: Vec<Intersection<Box<dyn Shape>>> = vec![
+            let xs: Vec<Intersection<Box<dyn Shape + Send>>> = vec![
                 Intersection::new(1.0, Box::new(s1.clone())),
                 Intersection::new(2.0, Box::new(s2.clone())),
                 Intersection::new(3.0, Box::new(s1.clone())),

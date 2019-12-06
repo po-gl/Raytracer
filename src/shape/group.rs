@@ -41,7 +41,7 @@ impl Group {
         self.children_ids.is_empty()
     }
 
-    pub fn add_child(&mut self, child: &mut Box<dyn Shape>, shape_list: &mut ShapeList) {
+    pub fn add_child(&mut self, child: &mut Box<dyn Shape + Send>, shape_list: &mut ShapeList) {
 
         child.set_parent(self.id(), shape_list);
 
@@ -68,7 +68,7 @@ impl Shape for Group {
         write!(f, "Box {:?}", self)
     }
 
-    fn shape_clone(&self) -> Box<dyn Shape> {
+    fn shape_clone(&self) -> Box<dyn Shape + Send> {
         Box::new(self.clone())
     }
 
@@ -76,7 +76,7 @@ impl Shape for Group {
         self.id
     }
 
-    fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape>> {
+    fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape + Send>> {
         if self.parent_id.is_some() {
             Some(shape_list[self.parent_id.unwrap() as usize].clone())
         } else {
@@ -111,11 +111,11 @@ impl Shape for Group {
         shape_list.update(Box::new(self.clone()))
     }
 
-    fn intersects(&self, ray: &Ray, shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape>>> {
+    fn intersects(&self, ray: &Ray, shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape + Send>>> {
         // Transform the ray
         let t_ray = ray.transform(&self.transform.inverse());
 
-        let mut xs: Vec<Intersection<Box<dyn Shape>>> = vec![];
+        let mut xs: Vec<Intersection<Box<dyn Shape + Send>>> = vec![];
         for child_id in self.children_ids.iter() {
             xs.append(&mut shape_list.get(*child_id).intersects(&t_ray, shape_list)); // Or ray?
         }
@@ -153,7 +153,7 @@ mod tests {
         let mut shape_list = ShapeList::new();
         let mut g = Group::new(&mut shape_list);
         let s = TestShape::new(&mut shape_list);
-        let mut shape: Box<dyn Shape> = Box::new(s);
+        let mut shape: Box<dyn Shape + Send> = Box::new(s);
         g.add_child(&mut shape, &mut shape_list);
         assert!(!g.is_empty());
 
@@ -180,10 +180,10 @@ mod tests {
     fn groups_intersects() {
         let mut shape_list = ShapeList::new();
         let mut g = Group::new(&mut shape_list);
-        let s1: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
-        let mut s2: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
+        let s1: Box<dyn Shape + Send> = Box::new(Sphere::new(&mut shape_list));
+        let mut s2: Box<dyn Shape + Send> = Box::new(Sphere::new(&mut shape_list));
         s2.set_transform(translation(0.0, 0.0, -3.0), &mut shape_list);
-        let mut s3: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
+        let mut s3: Box<dyn Shape + Send> = Box::new(Sphere::new(&mut shape_list));
         s3.set_transform(translation(5.0, 0.0, 0.0), &mut shape_list);
         g.add_child(&mut Box::new(s1.clone()), &mut shape_list);
         g.add_child(&mut Box::new(s2.clone()), &mut shape_list);
@@ -231,7 +231,7 @@ mod tests {
         let mut shape_list = ShapeList::new();
         let mut g = Group::new(&mut shape_list);
         g.set_transform(scaling(2.0, 2.0, 2.0), &mut shape_list);
-        let mut s: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
+        let mut s: Box<dyn Shape + Send> = Box::new(Sphere::new(&mut shape_list));
         s.set_transform(translation(5.0, 0.0, 0.0), &mut shape_list);
         g.add_child(&mut s, &mut shape_list);
         let r = Ray::new(point(10.0, 0.0, -10.0), vector(0.0, 0.0, 1.0));

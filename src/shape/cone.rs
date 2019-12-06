@@ -53,7 +53,7 @@ impl Cone {
         (x * x + z * z) <= Float(y.value().abs())
     }
 
-    fn intersect_caps(&self, ray: &Ray, xs: &mut Vec<Intersection<Box<dyn Shape>>>) {
+    fn intersect_caps(&self, ray: &Ray, xs: &mut Vec<Intersection<Box<dyn Shape + Send>>>) {
         if !self.closed {
             return // If a cylinder isn't closed, just return
         }
@@ -89,7 +89,7 @@ impl Shape for Cone {
         write!(f, "Box {:?}", self)
     }
 
-    fn shape_clone(&self) -> Box<dyn Shape> {
+    fn shape_clone(&self) -> Box<dyn Shape + Send> {
         Box::new(self.clone())
     }
 
@@ -97,7 +97,7 @@ impl Shape for Cone {
         self.id
     }
 
-    fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape>> {
+    fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape + Send>> {
         if self.parent_id.is_some() {
             Some(shape_list[self.parent_id.unwrap() as usize].clone())
         } else {
@@ -133,7 +133,7 @@ impl Shape for Cone {
         shape_list.update(Box::new(self.clone()))
     }
 
-    fn intersects(&self, ray: &Ray, _shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape>>> {
+    fn intersects(&self, ray: &Ray, _shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape + Send>>> {
         // Transform the ray
         let t_ray = ray.transform(&self.transform.inverse());
 
@@ -148,7 +148,7 @@ impl Shape for Cone {
         // Ray misses walls of cylinder
         if a == Float(0.0) && b == Float(0.0) {
             // The walls are not intersected but the caps may be
-            let mut xs: Vec<Intersection<Box<dyn Shape>>> = vec![];
+            let mut xs: Vec<Intersection<Box<dyn Shape + Send>>> = vec![];
             self.intersect_caps(&t_ray, &mut xs);
             return xs
         }
@@ -161,7 +161,7 @@ impl Shape for Cone {
         // but hits the next one, return a single point of intersection
         if a == Float(0.0) && b != Float(0.0) {
             let t = -c / (2.0 * b);
-            let mut xs: Vec<Intersection<Box<dyn Shape>>> = vec![];
+            let mut xs: Vec<Intersection<Box<dyn Shape + Send>>> = vec![];
             xs.push(Intersection::new(t, Box::new(self.clone())));
             self.intersect_caps(&t_ray, &mut xs);
             return xs;
@@ -181,7 +181,7 @@ impl Shape for Cone {
                 std::mem::swap(&mut t0, &mut t1);
             }
 
-            let mut xs: Vec<Intersection<Box<dyn Shape>>> = vec![];
+            let mut xs: Vec<Intersection<Box<dyn Shape + Send>>> = vec![];
 
             let y0 = t_ray.origin.y.value() + t0 * t_ray.direction.y.value();
             let y1 = t_ray.origin.y.value() + t1 * t_ray.direction.y.value();

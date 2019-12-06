@@ -15,8 +15,9 @@ use crate::shape::shape_list::ShapeList;
 
 const DEFAULT_RAY_BOUNCES: i32 = 4;
 
+#[derive(Clone)]
 pub struct World {
-    pub objects: Vec<Box<dyn Shape>>,
+    pub objects: Vec<Box<dyn Shape + Send>>,
     pub lights: Vec<Light>,
     pub max_recursion: i32,
 }
@@ -41,7 +42,7 @@ impl World {
         World {objects: vec![Box::new(sphere1), Box::new(sphere2)], lights: vec![light], max_recursion: DEFAULT_RAY_BOUNCES}
     }
 
-    pub fn contains_object(&self, object: &Box<dyn Shape>) -> bool {
+    pub fn contains_object(&self, object: &Box<dyn Shape + Send>) -> bool {
         self.objects.contains(object)
     }
 
@@ -49,7 +50,7 @@ impl World {
         self.lights.contains(light)
     }
 
-    pub fn intersects(&self, ray: &Ray, shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape>>> {
+    pub fn intersects(&self, ray: &Ray, shape_list: &mut ShapeList) -> Vec<Intersection<Box<dyn Shape + Send>>> {
         let mut intersections = vec![];
 
         for object in self.objects.iter() {
@@ -84,7 +85,7 @@ impl World {
     /// uses the default max_recursion value and is a wrapper for shade_hit_impl
     /// # Arguments
     /// * `comps` Precomputed data of a ray intersection
-    pub fn shade_hit(&self, comps: PrecomputedData<Box<dyn Shape>>, shape_list: &mut ShapeList) -> Color {
+    pub fn shade_hit(&self, comps: PrecomputedData<Box<dyn Shape + Send>>, shape_list: &mut ShapeList) -> Color {
         self.shade_hit_impl(comps, self.max_recursion, shape_list)
     }
 
@@ -92,7 +93,7 @@ impl World {
     /// # Arguments
     /// * `comps` Precomputed data of a ray intersection
     /// * `remaining` Remaining amount of recursions allowed
-    pub fn shade_hit_impl(&self, comps: PrecomputedData<Box<dyn Shape>>, remaining: i32, shape_list: &mut ShapeList) -> Color {
+    pub fn shade_hit_impl(&self, comps: PrecomputedData<Box<dyn Shape + Send>>, remaining: i32, shape_list: &mut ShapeList) -> Color {
         // One light implementation for now
         let is_shadowed = self.is_shadowed(comps.over_point, shape_list);
         let reflected = self.reflected_color_impl(comps.clone(), remaining, shape_list);
@@ -114,7 +115,7 @@ impl World {
     /// uses the default max_recursion value and is a wrapper for reflected_color_impl
     /// # Arguments
     /// * `comps` Precomputed data of a ray intersection
-    pub fn reflected_color(&self, comps: PrecomputedData<Box<dyn Shape>>, shape_list: &mut ShapeList) -> Color {
+    pub fn reflected_color(&self, comps: PrecomputedData<Box<dyn Shape + Send>>, shape_list: &mut ShapeList) -> Color {
         self.reflected_color_impl(comps, self.max_recursion, shape_list)
     }
 
@@ -122,7 +123,7 @@ impl World {
     /// # Arguments
     /// * `comps` Precomputed data of a ray intersection
     /// * `remaining` Remaining amount of recursions allowed
-    pub fn reflected_color_impl(&self, comps: PrecomputedData<Box<dyn Shape>>, remaining: i32, shape_list: &mut ShapeList) -> Color {
+    pub fn reflected_color_impl(&self, comps: PrecomputedData<Box<dyn Shape + Send>>, remaining: i32, shape_list: &mut ShapeList) -> Color {
         // If no more rays remain, return black
         if remaining < 1 {
             return Color::black();
@@ -144,7 +145,7 @@ impl World {
     /// uses the default max_recursion value and is a wrapper for reflected_color_impl
     /// # Arguments
     /// * `comps` Precomputed data of a ray intersection
-    pub fn refracted_color(&self, comps: PrecomputedData<Box<dyn Shape>>, shape_list: &mut ShapeList) -> Color {
+    pub fn refracted_color(&self, comps: PrecomputedData<Box<dyn Shape + Send>>, shape_list: &mut ShapeList) -> Color {
         self.refracted_color_impl(comps, self.max_recursion, shape_list)
     }
 
@@ -152,7 +153,7 @@ impl World {
     /// # Arguments
     /// * `comps` Precomputed data of a ray intersection
     /// * `remaining` Remaining amount of recursions allowed
-    pub fn refracted_color_impl(&self, comps: PrecomputedData<Box<dyn Shape>>, remaining: i32, shape_list: &mut ShapeList) -> Color {
+    pub fn refracted_color_impl(&self, comps: PrecomputedData<Box<dyn Shape + Send>>, remaining: i32, shape_list: &mut ShapeList) -> Color {
         // If no more rays remain, return black
         if remaining < 1 {
             return Color::black();
@@ -379,7 +380,7 @@ mod tests {
         let mut p = Plane::new(&mut shape_list);
         p.material.reflective = Float(0.5);
         p.transform = translation(0.0, -1.0, 0.0);
-        let shape: Box<dyn Shape> = Box::new(p);
+        let shape: Box<dyn Shape + Send> = Box::new(p);
         w.objects.push(shape.clone());
         let r = Ray::new(point(0.0, 0.0, -3.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
         let i = Intersection::new(2.0f64.sqrt(), shape);
@@ -396,7 +397,7 @@ mod tests {
         let mut p = Plane::new(&mut shape_list);
         p.material.reflective = Float(0.5);
         p.transform = translation(0.0, -1.0, 0.0);
-        let shape: Box<dyn Shape> = Box::new(p);
+        let shape: Box<dyn Shape + Send> = Box::new(p);
         w.objects.push(shape.clone());
         let r = Ray::new(point(0.0, 0.0, -3.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
         let i = Intersection::new(2.0f64.sqrt(), shape);
@@ -432,7 +433,7 @@ mod tests {
         let mut p = Plane::new(&mut shape_list);
         p.material.reflective = Float(0.5);
         p.transform = translation(0.0, -1.0, 0.0);
-        let shape: Box<dyn Shape> = Box::new(p);
+        let shape: Box<dyn Shape + Send> = Box::new(p);
         w.objects.push(shape.clone());
         let r = Ray::new(point(0.0, 0.0, -3.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
         let i = Intersection::new(2.0f64.sqrt(), shape);
@@ -522,13 +523,13 @@ mod tests {
         p.material.transparency = Float(0.5);
         p.material.refractive_index = Float(1.5);
         p.transform = translation(0.0, -1.0, 0.0);
-        let shape_p: Box<dyn Shape> = Box::new(p);
+        let shape_p: Box<dyn Shape + Send> = Box::new(p);
         w.objects.push(shape_p.clone());
         let mut b = Plane::new(&mut shape_list);
         b.material.color = Color::new(1.0, 0.0, 0.0);
         b.material.ambient = Float(0.5);
         b.transform = translation(0.0, -3.5, -0.5);
-        let shape_b: Box<dyn Shape> = Box::new(b);
+        let shape_b: Box<dyn Shape + Send> = Box::new(b);
         w.objects.push(shape_b.clone());
         let r = Ray::new(point(0.0, 0.0, -3.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
         let xs = vec![Intersection::new(2.0f64.sqrt(), shape_p)];
@@ -546,13 +547,13 @@ mod tests {
         p.material.transparency = Float(0.5);
         p.material.refractive_index = Float(1.5);
         p.transform = translation(0.0, -1.0, 0.0);
-        let shape_p: Box<dyn Shape> = Box::new(p);
+        let shape_p: Box<dyn Shape + Send> = Box::new(p);
         w.objects.push(shape_p.clone());
         let mut b = Plane::new(&mut shape_list);
         b.material.color = Color::new(1.0, 0.0, 0.0);
         b.material.ambient = Float(0.5);
         b.transform = translation(0.0, -3.5, -0.5);
-        let shape_b: Box<dyn Shape> = Box::new(b);
+        let shape_b: Box<dyn Shape + Send> = Box::new(b);
         w.objects.push(shape_b.clone());
         let r = Ray::new(point(0.0, 0.0, -3.0), vector(0.0, -2.0f64.sqrt()/2.0, 2.0f64.sqrt()/2.0));
         let xs = vec![Intersection::new(2.0f64.sqrt(), shape_p)];

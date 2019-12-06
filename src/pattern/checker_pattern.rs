@@ -35,7 +35,7 @@ impl Pattern for CheckerPattern {
         write!(f, "Box {:?}", self)
     }
 
-    fn pattern_clone(&self) -> Box<dyn Pattern> {
+    fn pattern_clone(&self) -> Box<dyn Pattern + Send> {
         Box::new(*self)
     }
 

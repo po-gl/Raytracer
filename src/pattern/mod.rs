@@ -24,7 +24,7 @@ pub trait Pattern: Any {
 
     fn debug_fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error>;
 
-    fn pattern_clone(&self) -> Box<dyn Pattern>;
+    fn pattern_clone(&self) -> Box<dyn Pattern + Send>;
 
     fn transform(&self) -> Matrix4;
 
@@ -32,26 +32,26 @@ pub trait Pattern: Any {
 
     fn pattern_at(&self, point: &Tuple) -> Color;
 
-    fn pattern_at_object(&self, object: Box<dyn Shape>, world_point: &Tuple) -> Color {
+    fn pattern_at_object(&self, object: Box<dyn Shape + Send>, world_point: &Tuple) -> Color {
         let object_point = object.transform().inverse() * world_point;
         let pattern_point = self.transform().inverse() * object_point;
         self.pattern_at(&pattern_point)
     }
 }
 
-impl PartialEq for Box<dyn Pattern> {
-    fn eq(&self, other: &Box<dyn Pattern>) -> bool {
+impl PartialEq for Box<dyn Pattern + Send> {
+    fn eq(&self, other: &Box<dyn Pattern + Send>) -> bool {
         self.box_eq(other.as_any())
     }
 }
 
-impl Debug for Box<dyn Pattern> {
+impl Debug for Box<dyn Pattern + Send> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         self.debug_fmt(f)
     }
 }
 
-impl Clone for Box<dyn Pattern> {
+impl Clone for Box<dyn Pattern + Send> {
     fn clone(&self) -> Self {
         self.pattern_clone()
     }

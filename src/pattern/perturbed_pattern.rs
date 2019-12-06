@@ -13,7 +13,7 @@ use crate::tuple;
 
 #[derive(Debug, Clone)]
 pub struct PerturbedPattern {
-    pub pattern: Option<Box<dyn Pattern>>, // Pattern to perturb
+    pub pattern: Option<Box<dyn Pattern + Send>>, // Pattern to perturb
     pub transform: Matrix4,
     pub perlin: Perlin,
     /// Typically a positive number below 0.2
@@ -21,7 +21,7 @@ pub struct PerturbedPattern {
 }
 
 impl PerturbedPattern {
-    pub fn new(pattern: Box<dyn Pattern>, perlin_factor: f64) -> PerturbedPattern {
+    pub fn new(pattern: Box<dyn Pattern + Send>, perlin_factor: f64) -> PerturbedPattern {
         PerturbedPattern { pattern: Some(pattern), transform: Matrix4::identity(), perlin: Perlin::new(), perlin_factor }
     }
 }
@@ -40,7 +40,7 @@ impl Pattern for PerturbedPattern {
         write!(f, "Box {:?}", self)
     }
 
-    fn pattern_clone(&self) -> Box<dyn Pattern> {
+    fn pattern_clone(&self) -> Box<dyn Pattern + Send> {
         Box::new(self.clone())
     }
 

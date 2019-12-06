@@ -156,11 +156,11 @@ pub fn draw_combined_scene() {
 
 //--------------------------------------------------
 
-pub fn fractal(material: Material, recursion_depth: i32, shape_list: &mut ShapeList) -> Box<dyn Shape> {
+pub fn fractal(material: Material, recursion_depth: i32, shape_list: &mut ShapeList) -> Box<dyn Shape + Send> {
     let mut group = Group::new(shape_list);
 
     // main sphere
-    let mut new_sphere: Box<dyn Shape> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
+    let mut new_sphere: Box<dyn Shape + Send> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
     group.add_child(&mut new_sphere, shape_list);
 
     fractal_node(&mut group, Matrix4::identity(), &material, recursion_depth, shape_list);
@@ -180,7 +180,7 @@ pub fn fractal_node(node_group: &mut Group, transform: Matrix4, material: &Mater
 
     // Create 6 spheres
     // Top
-    let mut new_sphere: Box<dyn Shape> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
+    let mut new_sphere: Box<dyn Shape + Send> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
     let new_transform = transform * translation(0.0, 1.0 + current_width, 0.0) * scaling(current_width, current_width, current_width);
     new_sphere.set_transform(new_transform, shape_list);
     node_group.add_child(&mut new_sphere, shape_list);
@@ -188,7 +188,7 @@ pub fn fractal_node(node_group: &mut Group, transform: Matrix4, material: &Mater
     fractal_node(node_group, new_transform, material, remaining-1, shape_list);
 
     // Bottom
-    let mut new_sphere: Box<dyn Shape> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
+    let mut new_sphere: Box<dyn Shape + Send> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
     let new_transform = transform * translation(0.0, -(1.0 + current_width), 0.0) * scaling(current_width, current_width, current_width);
     new_sphere.set_transform(new_transform, shape_list);
     node_group.add_child(&mut new_sphere, shape_list);
@@ -196,7 +196,7 @@ pub fn fractal_node(node_group: &mut Group, transform: Matrix4, material: &Mater
     fractal_node(node_group, new_transform, material, remaining-1, shape_list);
 
     // Left
-    let mut new_sphere: Box<dyn Shape> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
+    let mut new_sphere: Box<dyn Shape + Send> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
     let new_transform = transform * translation(-(1.0 + current_width), 0.0, 0.0) * scaling(current_width, current_width, current_width);
     new_sphere.set_transform(new_transform, shape_list);
     node_group.add_child(&mut new_sphere, shape_list);
@@ -204,7 +204,7 @@ pub fn fractal_node(node_group: &mut Group, transform: Matrix4, material: &Mater
     fractal_node(node_group, new_transform, material, remaining-1, shape_list);
 
     // Right
-    let mut new_sphere: Box<dyn Shape> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
+    let mut new_sphere: Box<dyn Shape + Send> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
     let new_transform = transform * translation(1.0 + current_width, 0.0, 0.0) * scaling(current_width, current_width, current_width);
     new_sphere.set_transform(new_transform, shape_list);
     node_group.add_child(&mut new_sphere, shape_list);
@@ -212,7 +212,7 @@ pub fn fractal_node(node_group: &mut Group, transform: Matrix4, material: &Mater
     fractal_node(node_group, new_transform, material, remaining-1, shape_list);
 
     // Forwards
-    let mut new_sphere: Box<dyn Shape> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
+    let mut new_sphere: Box<dyn Shape + Send> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
     let new_transform = transform * translation(0.0, 0.0, -(1.0 + current_width)) * scaling(current_width, current_width, current_width);
     new_sphere.set_transform(new_transform, shape_list);
     node_group.add_child(&mut new_sphere, shape_list);
@@ -220,7 +220,7 @@ pub fn fractal_node(node_group: &mut Group, transform: Matrix4, material: &Mater
     fractal_node(node_group, new_transform, material, remaining-1, shape_list);
 
     // Backwards
-    let mut new_sphere: Box<dyn Shape> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
+    let mut new_sphere: Box<dyn Shape + Send> = Box::new(Sphere::new_with_material(material.clone(), shape_list));
     let new_transform = transform * translation(0.0, 0.0, 1.0 + current_width) * scaling(current_width, current_width, current_width);
     new_sphere.set_transform(new_transform, shape_list);
     node_group.add_child(&mut new_sphere, shape_list);
@@ -379,8 +379,8 @@ pub fn draw_perturbed_normal_scene() {
 
 pub fn draw_soft_shadow_scene() {
     // Options
-    let canvas_width = 100;
-    let canvas_height = 100;
+    let canvas_width = 500;
+    let canvas_height = 500;
     let fov = PI/3.0;
 
     // Construct world
@@ -400,7 +400,11 @@ pub fn draw_soft_shadow_scene() {
 
     let mut s1 = Sphere::new(shape_list);
     let mut material = Material::new();
-    material.color = Color::from_hex("0000FF");
+//    material.color = Color::from_hex("0000FF");
+    let pattern_a = RingPattern::new(Color::from_hex("0000FF"), Color::from_hex("FF0000"));
+    let mut pattern = PerturbedPattern::new(Box::new(pattern_a), 0.25);
+    pattern.set_transform(transformation::scaling(0.1, 0.1, 0.1) * transformation::rotation_y(PI/6.0) * transformation::rotation_x(-PI/6.0));
+    material.set_pattern(Box::new(pattern));
 //    material.normal_perturb = Some(String::from("sin_y"));
 //    material.normal_perturb_factor = Some(20.0);
     s1.set_transform(translation(0.0, 1.0, 0.0), shape_list);
@@ -409,8 +413,10 @@ pub fn draw_soft_shadow_scene() {
 
     let mut s2 = Sphere::new(shape_list);
     s2.set_transform(translation(0.5, 0.9, -1.4) * scaling(0.2, 0.2, 0.2), shape_list);
-    let mut material = Material::new();
-    material.color = Color::from_hex("FF0000");
+    let mut material = Material::mirror();
+    material.normal_perturb = Some(String::from("sin_y"));
+    material.normal_perturb_factor = Some(20.0);
+//    material.color = Color::from_hex("FF0000");
     s2.set_material(material, shape_list);
     world.objects.push(Box::new(s2));
 
@@ -422,9 +428,10 @@ pub fn draw_soft_shadow_scene() {
     world.objects.push(Box::new(c1));
 
 
-//    let mut light = Light::area_light(&point(-2.5, 4.6, -2.5), &Color::new(1.0, 1.0, 1.0), 0.2);
+    let mut light = Light::area_light(&point(-2.5, 4.6, -2.5), &Color::new(1.0, 1.0, 1.0), 0.2);
+    light.ray_count = 30;
 //    light.radius = Some(20.0);
-    let light = Light::point_light(&point(-2.5, 4.6, -2.5), &Color::new(1.0, 1.0, 1.0));
+//    let light = Light::point_light(&point(-2.5, 4.6, -2.5), &Color::new(1.0, 1.0, 1.0));
     world.lights.push(light);
 
     // Create camera and render scene
@@ -562,7 +569,7 @@ pub fn draw_obj_scene() {
 
 //--------------------------------------------------
 
-//pub fn hexagon(shape_list: &mut ShapeList) -> Box<dyn Shape> {
+//pub fn hexagon(shape_list: &mut ShapeList) -> Box<dyn Shape + Send> {
 //    let mut hex = Group::new(shape_list);
 //
 //    for i in 0..5 {
@@ -576,7 +583,7 @@ pub fn draw_obj_scene() {
 //    Box::new(hex)
 //}
 //
-//pub fn hexagon_side(parent: Box<dyn Shape>, shape_list: &mut ShapeList) -> Box<dyn Shape> {
+//pub fn hexagon_side(parent: Box<dyn Shape + Send>, shape_list: &mut ShapeList) -> Box<dyn Shape + Send> {
 //    let mut side = Group::new(shape_list);
 //    side.add_child(&mut hexagon_corner(Box::new(side.clone()), shape_list));
 //    println!("  side1: {:#?}", side);
@@ -586,7 +593,7 @@ pub fn draw_obj_scene() {
 //    Box::new(side).set_parent(parent)
 //}
 //
-//pub fn hexagon_edge(parent: Box<dyn Shape>, shape_list: &mut ShapeList) -> Box<dyn Shape> {
+//pub fn hexagon_edge(parent: Box<dyn Shape + Send>, shape_list: &mut ShapeList) -> Box<dyn Shape + Send> {
 //    let mut edge = Cylinder::new(shape_list);
 //    edge.minimum = 0.0;
 //    edge.maximum = 0.0;
@@ -599,7 +606,7 @@ pub fn draw_obj_scene() {
 //    Box::new(edge).set_parent(parent)
 //}
 //
-//pub fn hexagon_corner(parent: Box<dyn Shape>, shape_list: &mut ShapeList) -> Box<dyn Shape> {
+//pub fn hexagon_corner(parent: Box<dyn Shape + Send>, shape_list: &mut ShapeList) -> Box<dyn Shape + Send> {
 //    let mut corner = Sphere::new(shape_list);
 //    corner.transform = translation(0.0, 0.0, -1.0) * scaling(0.25, 0.25, 0.25);
 //
@@ -641,9 +648,9 @@ pub fn draw_hexagon_scene() {
 //    hexagon.set_material(material);
 //    world.objects.push(hexagon);
 
-    let mut s1: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
-    let mut s2: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
-    let mut s3: Box<dyn Shape> = Box::new(Sphere::new(&mut shape_list));
+    let mut s1: Box<dyn Shape + Send> = Box::new(Sphere::new(&mut shape_list));
+    let mut s2: Box<dyn Shape + Send> = Box::new(Sphere::new(&mut shape_list));
+    let mut s3: Box<dyn Shape + Send> = Box::new(Sphere::new(&mut shape_list));
 
     s1.set_transform(translation(1.5, 1.0, 0.0), &mut shape_list);
     s2.set_transform(translation(0.0, 1.0, 0.0), &mut shape_list);
@@ -1000,6 +1007,7 @@ pub fn draw_refracted_scene() {
     let mut camera = Camera::new(canvas_width, canvas_height, fov);
     camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
 
+//    let canvas = camera.multithead2_render(world, &mut shape_list);
     let canvas = camera.render(world, &mut shape_list);
     file::write_to_file(canvas.to_ppm(), String::from("refracted_scene.ppm"))
 }
