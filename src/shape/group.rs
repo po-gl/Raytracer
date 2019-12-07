@@ -16,6 +16,7 @@ use crate::shape::shape_list::ShapeList;
 #[derive(Debug, PartialEq, Clone)]
 pub struct Group {
     pub id: i32,
+    pub shape_type: String,
     pub parent_id: Option<i32>,
     pub transform: Matrix4,
     pub material: Material,
@@ -25,14 +26,14 @@ pub struct Group {
 impl Group {
     pub fn new(shape_list: &mut ShapeList) -> Group {
         let id = shape_list.get_id();
-        let shape = Group {id, parent_id: None, transform: Matrix4::identity(), material: Material::new(), children_ids: vec![]};
+        let shape = Group {id, shape_type: String::from("group"), parent_id: None, transform: Matrix4::identity(), material: Material::new(), children_ids: vec![]};
         shape_list.push(Box::new(shape.clone()));
         shape
     }
 
     pub fn new_with_material(material: Material, shape_list: &mut ShapeList) -> Group {
         let id = shape_list.get_id();
-        let shape = Group{id, parent_id: None, transform: Matrix4::identity(), material, children_ids: vec![]};
+        let shape = Group{id, shape_type: String::from("group"), parent_id: None, transform: Matrix4::identity(), material, children_ids: vec![]};
         shape_list.push(Box::new(shape.clone()));
         shape
     }
@@ -74,6 +75,10 @@ impl Shape for Group {
 
     fn id(&self) -> i32 {
         self.id
+    }
+
+    fn shape_type(&self) -> String {
+        self.shape_type.clone()
     }
 
     fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape + Send>> {

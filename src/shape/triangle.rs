@@ -17,6 +17,7 @@ use crate::normal_perturber::NormalPerturber;
 #[derive(Debug, PartialEq, Clone)]
 pub struct Triangle {
     pub id: i32,
+    pub shape_type: String,
     pub parent_id: Option<i32>,
     pub transform: Matrix4,
     pub material: Material,
@@ -38,7 +39,7 @@ impl Triangle {
         let id = shape_list.get_id();
         let e1 = p2 - p1;
         let e2 = p3 - p1;
-        let shape = Triangle {id, parent_id: None, transform: Matrix4::identity(), material: Material::new(),
+        let shape = Triangle {id, shape_type: String::from("triangle"), parent_id: None, transform: Matrix4::identity(), material: Material::new(),
             p1, p2, p3, e1, e2, normal: tuple::cross(&e2, &e1).normalize()};
         shape_list.push(Box::new(shape.clone()));
         shape
@@ -48,7 +49,7 @@ impl Triangle {
         let id = shape_list.get_id();
         let e1 = p2 - p1;
         let e2 = p3 - p1;
-        let shape = Triangle {id, parent_id: None, transform: Matrix4::identity(), material,
+        let shape = Triangle {id, shape_type: String::from("triangle"), parent_id: None, transform: Matrix4::identity(), material,
             p1, p2, p3, e1, e2, normal: tuple::cross(&e2, &e1).normalize()};
         shape_list.push(Box::new(shape.clone()));
         shape
@@ -78,6 +79,10 @@ impl Shape for Triangle {
 
     fn id(&self) -> i32 {
         self.id
+    }
+
+    fn shape_type(&self) -> String {
+        self.shape_type.clone()
     }
 
     fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape + Send>> {

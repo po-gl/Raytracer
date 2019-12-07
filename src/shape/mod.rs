@@ -49,6 +49,8 @@ pub trait Shape: Any {
 
     fn id(&self) -> i32;
 
+    fn shape_type(&self) -> String;
+
     fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape + Send>>;
 
     fn includes(&self, id: i32) -> bool;

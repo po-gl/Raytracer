@@ -16,6 +16,7 @@ use crate::shape::shape_list::ShapeList;
 #[derive(Debug, PartialEq, Clone)]
 pub struct CSG {
     pub id: i32,
+    pub shape_type: String,
     pub left_id: Option<i32>,
     pub right_id: Option<i32>,
     pub parent_id: Option<i32>,
@@ -27,7 +28,7 @@ pub struct CSG {
 impl CSG {
     pub fn new(shape_list: &mut ShapeList) -> CSG {
         let id = shape_list.get_id();
-        let shape = CSG { id, parent_id: None, left_id: None, right_id: None,
+        let shape = CSG { id, shape_type: String::from("csg"), parent_id: None, left_id: None, right_id: None,
             transform: Matrix4::identity(), material: Material::new(), operation: None};
         shape_list.push(Box::new(shape.clone()));
         shape
@@ -117,6 +118,10 @@ impl Shape for CSG {
 
     fn id(&self) -> i32 {
         self.id
+    }
+
+    fn shape_type(&self) -> String {
+        self.shape_type.clone()
     }
 
     fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape + Send>> {

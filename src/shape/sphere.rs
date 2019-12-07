@@ -18,6 +18,7 @@ use crate::normal_perturber::NormalPerturber;
 #[derive(Debug, PartialEq, Clone)]
 pub struct Sphere {
     pub id: i32,
+    pub shape_type: String,
     pub parent_id: Option<i32>,
     pub transform: Matrix4,
     pub material: Material,
@@ -26,14 +27,14 @@ pub struct Sphere {
 impl Sphere {
     pub fn new(shape_list: &mut ShapeList) -> Sphere {
         let id = shape_list.get_id();
-        let shape = Sphere {id, parent_id: None, transform: Matrix4::identity(), material: Material::new()};
+        let shape = Sphere {id, shape_type: String::from("sphere"), parent_id: None, transform: Matrix4::identity(), material: Material::new()};
         shape_list.push(Box::new(shape.clone()));
         shape
     }
 
     pub fn new_with_material(material: Material, shape_list: &mut ShapeList) -> Sphere {
         let id = shape_list.get_id();
-        let shape = Sphere{id, parent_id: None, transform: Matrix4::identity(), material};
+        let shape = Sphere{id, shape_type: String::from("sphere"), parent_id: None, transform: Matrix4::identity(), material};
         shape_list.push(Box::new(shape.clone()));
         shape
     }
@@ -62,6 +63,10 @@ impl Shape for Sphere {
 
     fn id(&self) -> i32 {
         self.id
+    }
+
+    fn shape_type(&self) -> String {
+        self.shape_type.clone()
     }
 
     fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape + Send>> {

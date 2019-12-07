@@ -18,6 +18,7 @@ use crate::normal_perturber::NormalPerturber;
 #[derive(Debug, PartialEq, Clone)]
 pub struct Cylinder {
     pub id: i32,
+    pub shape_type: String,
     pub parent_id: Option<i32>,
     pub transform: Matrix4,
     pub material: Material,
@@ -29,21 +30,21 @@ pub struct Cylinder {
 impl Cylinder {
     pub fn new(shape_list: &mut ShapeList) -> Cylinder {
         let id = shape_list.get_id();
-        let shape = Cylinder {id, parent_id: None, transform: Matrix4::identity(), material: Material::new(), minimum: NumFloat::neg_infinity(), maximum: NumFloat::infinity(), closed: false};
+        let shape = Cylinder {id, shape_type: String::from("cylinder"), parent_id: None, transform: Matrix4::identity(), material: Material::new(), minimum: NumFloat::neg_infinity(), maximum: NumFloat::infinity(), closed: false};
         shape_list.push(Box::new(shape.clone()));
         shape
     }
 
     pub fn new_with_material(material: Material, shape_list: &mut ShapeList) -> Cylinder {
         let id = shape_list.get_id();
-        let shape = Cylinder{id, parent_id: None, transform: Matrix4::identity(), material, minimum: NumFloat::neg_infinity(), maximum: NumFloat::infinity(), closed: false};
+        let shape = Cylinder{id, shape_type: String::from("cylinder"), parent_id: None, transform: Matrix4::identity(), material, minimum: NumFloat::neg_infinity(), maximum: NumFloat::infinity(), closed: false};
         shape_list.push(Box::new(shape.clone()));
         shape
     }
 
     pub fn new_bounded(minimum: f64, maximum: f64, shape_list: &mut ShapeList) -> Cylinder {
         let id = shape_list.get_id();
-        let shape = Cylinder {id, parent_id: None, transform: Matrix4::identity(), material: Material::new(), minimum, maximum, closed: false};
+        let shape = Cylinder {id, shape_type: String::from("cylinder"), parent_id: None, transform: Matrix4::identity(), material: Material::new(), minimum, maximum, closed: false};
         shape_list.push(Box::new(shape.clone()));
         shape
     }
@@ -97,6 +98,10 @@ impl Shape for Cylinder {
 
     fn id(&self) -> i32 {
         self.id
+    }
+
+    fn shape_type(&self) -> String {
+        self.shape_type.clone()
     }
 
     fn parent(&self, shape_list: &mut ShapeList) -> Option<Box<dyn Shape + Send>> {
