@@ -124,13 +124,13 @@ pub fn draw_combined_scene() {
 //    let mut material = Material::new();
 //    material.color = Color::from_hex("FF0000");
 
-    let mut shape = Cone::new_bounded(-1.0, 0.0);
+    let mut shape = Cone::new_bounded(-1.0, 0.0, shape_list);
     shape.closed = true;
     shape.transform = translation(0.5, 0.5, -0.1) * scaling(0.1, 0.5, 0.1);
     shape.material = material.clone();
     world.objects.push(Box::new(shape));
 
-    let mut shape = Cylinder::new_bounded(-1.0, 0.0);
+    let mut shape = Cylinder::new_bounded(-1.0, 0.0, shape_list);
     shape.closed = true;
     shape.transform = translation(0.3, 0.4, 0.08) * scaling(0.1, 0.4, 0.1);
     shape.material = material.clone();
@@ -703,7 +703,7 @@ pub fn draw_cone_scene() {
     floor.material = material;
     world.objects.push(Box::new(floor));
 
-    let mut middle_cone = Cone::new_bounded(-1.0, 1.0);
+    let mut middle_cone = Cone::new_bounded(-1.0, 1.0, &mut shape_list);
     middle_cone.closed = true;
     middle_cone.transform = translation(0.0, 2.0, 0.0) * scaling(1.0, 2.0, 1.0);
     let material = Material::mirror();
@@ -729,7 +729,7 @@ pub fn draw_cone_scene() {
     ];
     for i in 0..colors.len() {
         let rotation = PI/6.0 + PI/6.0 * i as f64;
-        let mut cylinder = Cylinder::new_bounded(0.0, 2.0);
+        let mut cylinder = Cylinder::new_bounded(0.0, 2.0, &mut shape_list);
         cylinder.closed = true;
         cylinder.transform = rotation_y(rotation) * translation(0.0, 1.0, -3.0) * scaling(0.4, 1.0, 0.4);
 //        let material = Material::mirror();
@@ -787,7 +787,7 @@ pub fn draw_cylinder_refracted_scene() {
     floor.material = material;
     world.objects.push(Box::new(floor));
 
-    let mut middle_cylinder = Cylinder::new_bounded(0.0, 3.0);
+    let mut middle_cylinder = Cylinder::new_bounded(0.0, 3.0, &mut shape_list);
     middle_cylinder.closed = true;
 //    middle_cylinder.transform = scaling(0.7, 1.0, 0.7);
     let material = Material::glass();
@@ -803,7 +803,7 @@ pub fn draw_cylinder_refracted_scene() {
         Color::from_hex("00cc00"),
     ];
     for i in 0..colors.len() {
-        let mut cylinder = Cylinder::new_bounded(0.0, 2.0);
+        let mut cylinder = Cylinder::new_bounded(0.0, 2.0, &mut shape_list);
         cylinder.closed = true;
         cylinder.transform = rotation_y(PI - PI/6.0 * i as f64) * translation(0.0, 0.0, -3.0) * scaling(0.4, 1.0, 0.4);
 //        let material = Material::mirror();
@@ -826,7 +826,7 @@ pub fn draw_cylinder_refracted_scene() {
         Color::from_hex("FCD29F"),
     ];
     for i in 0..colors.len() {
-        let mut cylinder = Cylinder::new_bounded(0.0, 0.4);
+        let mut cylinder = Cylinder::new_bounded(0.0, 0.4, &mut shape_list);
         let height = (i as f64 + 1.0) * 0.44;
         let width =  (i as f64 + 1.0) * -0.4;
         cylinder.transform = rotation_y(-PI/9.0) * translation(0.0, 0.0, -3.5) * scaling(2.0 + width, 1.0 + height, 2.0 + width);
@@ -881,7 +881,7 @@ pub fn draw_cylinder_scene() {
     floor.material = material;
     world.objects.push(Box::new(floor));
 
-    let mut middle_cylinder = Cylinder::new_bounded(0.0, 3.0);
+    let mut middle_cylinder = Cylinder::new_bounded(0.0, 3.0, &mut shape_list);
     middle_cylinder.closed = true;
 //    middle_cylinder.transform = scaling(0.7, 1.0, 0.7);
     let material = Material::mirror();
@@ -897,7 +897,7 @@ pub fn draw_cylinder_scene() {
         Color::from_hex("00cc00"),
     ];
     for i in 0..colors.len() {
-        let mut cylinder = Cylinder::new_bounded(0.0, 2.0);
+        let mut cylinder = Cylinder::new_bounded(0.0, 2.0, &mut shape_list);
         cylinder.closed = true;
         cylinder.transform = rotation_y(PI/6.0 * i as f64) * translation(0.0, 0.0, -3.0) * scaling(0.4, 1.0, 0.4);
 //        let material = Material::mirror();

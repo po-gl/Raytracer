@@ -3,7 +3,7 @@
 
 use crate::shape::Shape;
 use crate::ray::Ray;
-use crate::{shape, FLOAT_THRESHOLD};
+use crate::{FLOAT_THRESHOLD};
 use crate::intersection::Intersection;
 use crate::matrix::Matrix4;
 use crate::tuple::{Tuple, vector};
@@ -41,9 +41,11 @@ impl Cone {
         shape
     }
 
-    pub fn new_bounded(minimum: f64, maximum: f64) -> Cone {
-        let id = shape::get_shape_id();
-        Cone {id, parent_id: None, transform: Matrix4::identity(), material: Material::new(), minimum, maximum, closed: false}
+    pub fn new_bounded(minimum: f64, maximum: f64, shape_list: &mut ShapeList) -> Cone {
+        let id = shape_list.get_id();
+        let shape = Cone {id, parent_id: None, transform: Matrix4::identity(), material: Material::new(), minimum, maximum, closed: false};
+        shape_list.push(Box::new(shape.clone()));
+        shape
     }
 
     /// Check if the intersection at t is within a radius of the y axis
