@@ -40,7 +40,7 @@ impl CSG {
         shape_list.get(left_id).set_parent(id, shape_list);
         shape_list.get(right_id).set_parent(id, shape_list);
 
-        let shape = CSG { id, parent_id: None, left_id: Some(left_id), right_id: Some(right_id),
+        let shape = CSG { id, shape_type: String::from("csg"), parent_id: None, left_id: Some(left_id), right_id: Some(right_id),
             transform: Matrix4::identity(), material: Material::new(),
             operation: Some(String::from(operation))};
         shape_list.push(Box::new(shape.clone()));
@@ -49,7 +49,7 @@ impl CSG {
 
     pub fn new_with_material(material: Material, shape_list: &mut ShapeList) -> CSG {
         let id = shape_list.get_id();
-        let shape = CSG { id, parent_id: None, left_id: None, right_id: None,
+        let shape = CSG { id, shape_type: String::from("csg"), parent_id: None, left_id: None, right_id: None,
             transform: Matrix4::identity(), material, operation: None};
         shape_list.push(Box::new(shape.clone()));
         shape
