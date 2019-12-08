@@ -14,6 +14,7 @@ use std::fmt::{Formatter, Error};
 use num_traits::float::Float as NumFloat;
 use crate::shape::shape_list::ShapeList;
 use crate::normal_perturber::NormalPerturber;
+use crate::transformation::{translation, scaling};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Cube {
@@ -37,6 +38,26 @@ impl Cube {
         let shape = Cube{id, shape_type: String::from("cube"), parent_id: None, transform: Matrix4::identity(), material};
         shape_list.push(Box::new(shape.clone()));
         shape
+    }
+
+    pub fn new_including_points(min_point: Tuple, max_point: Tuple, shape_list: &mut ShapeList) -> Cube {
+        let id = shape_list.get_id();
+        let mut shape = Cube {id, shape_type: String::from("cube"), parent_id: None, transform: Matrix4::identity(), material: Material::new()};
+        shape_list.push(Box::new(shape.clone()));
+        shape.transform_to_fit_points(min_point, max_point, shape_list);
+        shape
+    }
+
+    pub fn transform_to_fit_points(&mut self, min: Tuple, max: Tuple, shape_list: &mut ShapeList) {
+        // First get the center point of the cube
+        let center: Tuple = (max + min) / 2.0;
+
+        // Translate to the point and scale to points
+        self.set_transform(
+            translation(center.x.value(), center.y.value(), center.z.value()) *
+                scaling((center.x.value() - max.x.value()).abs(),
+                        (center.y.value() - max.y.value()).abs(),
+                        (center.z.value() - max.z.value()).abs()), shape_list);
     }
 }
 
@@ -258,5 +279,21 @@ mod tests {
             let normal = shape::normal_at(Box::new(c), p, &mut shape_list);
             assert_eq!(normal, examples[i].1)
         }
+    }
+    
+    #[test]
+    fn cube_fit_around_points() {
+        let shape_list = &mut ShapeList::new();
+        let mut c = Cube::new(shape_list);
+        let min = point(-2.0, -2.0, -2.0);
+        let max = point(1.0, 1.0, 2.0);
+        c.transform_to_fit_points(min, max, shape_list);
+
+        let r = Ray::new(point(-1.9, -1.9, -5.0), vector(0.0, 0.0, 1.0));
+        let xs = c.intersects(&r, shape_list);
+
+        assert_eq!(xs.len(), 2);
+        assert_eq!(xs[0].t, 3.0);
+        assert_eq!(xs[1].t, 7.0);
     }
 }
