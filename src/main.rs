@@ -20,6 +20,7 @@ pub mod material;
 pub mod pattern;
 pub mod normal_perturber;
 pub mod shape;
+pub mod bounds;
 pub mod light;
 pub mod world;
 pub mod camera;
