@@ -41,7 +41,58 @@ use noise::Perlin;
 
 //--------------------------------------------------
 //--------------------------------------------------
+pub fn draw_bounds_scene() {
+    // Options
+    let canvas_width = 1000;
+    let canvas_height = 1000;
+    let fov = PI/3.0;
 
+    // Construct world
+    let mut world = World::new();
+    let shape_list = &mut ShapeList::new();
+
+    let mut floor = Plane::new(shape_list);
+    floor.transform = scaling(10.0, 0.01, 10.0);
+    let mut material = Material::new();
+    let pattern_a = RingPattern::new(Color::from_hex("726DA8"), Color::from_hex("A0D2DB"));
+//    let pattern_b = StripePattern::new(Color::from_hex("0000FF"), Color::black());
+    let mut pattern = PerturbedPattern::new(Box::new(pattern_a), 0.15);
+    pattern.set_transform(transformation::scaling(0.1, 0.1, 0.1));
+    material.set_pattern(Box::new(pattern));
+    material.color = Color::from_hex("FFE2BA");
+    material.specular = Float(0.0);
+    material.reflective = Float(0.4);
+    floor.material = material;
+    world.objects.push(Box::new(floor));
+
+    let mut group = Group::new(shape_list);
+
+    let mut glass_sphere = Sphere::new(shape_list);
+    glass_sphere.transform = translation(-0.5, 0.45, -2.0) * scaling(0.45, 0.45, 0.45);
+//    let mut material = Material::new();
+    let mut material = Material::glass();
+    material.normal_perturb = Some(String::from("sin_y"));
+    material.normal_perturb_factor = Some(20.0);
+    glass_sphere.material = material;
+    let shape: Box<dyn Shape + Send> = Box::new(glass_sphere);
+    group.add_child(&mut Box::new(shape), shape_list);
+
+
+    world.objects.push(Box::new(group));
+
+    let light = Light::point_light(&point(-10.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0));
+//    let light = Light::area_light(&point(-10.0, 10.0, -10.0), &Color::new(1.0, 1.0, 1.0), 1.0);
+    world.lights.push(light);
+
+    // Create camera and render scene
+    let mut camera = Camera::new(canvas_width, canvas_height, fov);
+    camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
+
+    let canvas = camera.multithead_render(world, 8, shape_list);
+    file::write_to_file(canvas.to_ppm(), String::from("bounds_scene.ppm"))
+}
+
+//--------------------------------------------------
 
 pub fn draw_combined_scene() {
     // Options
@@ -371,7 +422,7 @@ pub fn draw_perturbed_normal_scene() {
     camera.transform = view_transform(point(0.0, 1.5, -5.0), point(0.0, 1.0, 0.0), vector(0.0, 1.0, 0.0));
 
     let canvas = camera.render(world, shape_list);
-    file::write_to_file(canvas.to_ppm(), String::from("perturbed_normal_scene2.ppm"))
+    file::write_to_file(canvas.to_ppm(), String::from("perturbed_normal_scene.ppm"))
 }
 
 //--------------------------------------------------

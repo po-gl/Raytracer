@@ -127,6 +127,10 @@ fn main() {
             println!("Running Example \"{}\"", example);
             examples::draw_combined_scene();
         },
+        "draw-bounds-scene" => {
+            println!("Running Example \"{}\"", example);
+            examples::draw_bounds_scene();
+        },
         _ => println!("No valid argument.")
     }
 }
