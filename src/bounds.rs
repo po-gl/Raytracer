@@ -13,7 +13,7 @@ use crate::shape::shape_list::ShapeList;
 use crate::shape::cube::Cube;
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Bounds {
     pub min_point: Tuple,
     pub max_point: Tuple,
