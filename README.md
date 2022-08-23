@@ -3,12 +3,12 @@
 A raytracer renderer written in Rust based on the book "The Ray Tracer Challenge" by Jamis Buck.
 
 ## Features
-- Reflections and Refractions!
-- Soft shadows
-- Many shapes
-- Bounded-box render optimizing
-- Perturbed patterns and normals
-- Multi-threaded rendering
+- Reflections and Refractions! 🪞
+- Soft shadows ⚫ 🔦
+- Many shapes 🔵🔶🔺
+- Bounded-box render optimizing 📦
+- Perturbed patterns and normals 🌊
+- Multi-threaded rendering 🧶🧶🧶
 
 ## What's next?
 - YAML-like parser
